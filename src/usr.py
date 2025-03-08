@@ -1,6 +1,7 @@
 import sqlite3
 import random
 import string
+from typing import Self
 
 class User:
     def __init__(self, u_id: int, first_name: str, last_name: str, username: str, password_hash: str):
@@ -38,41 +39,121 @@ class NetworkUser:
     """
     Represents a user that would be sent to a client over the network. It does not include information about passwords or tokens.
     """
-    def __init__(self, user: User, token: str):
+    def __init__(self, user: User):
         self.fname = user.fname
         self.lname = user.lname
         self.username = user.username
-        self.token = token
 
     def to_dict(self) -> dict:
         return {
             "first_name": self.fname,
             "last_name": self.lname,
-            "username": self.username,
-            "token": self.token
+            "username": self.username
         }
     
+    @staticmethod
+    def from_dict(val: dict[str: str]) -> Self | None:
+        pass
+
+
     def __str__(self):
         return f"{self.lname}, {self.fname} ({self.username})"
     
-class SignInMessage:
+class SignInRequest:
     def __init__(self, username: str, password: str):
         self.username = username
         self.password = password
-    def from_dict(val: dict): 
-        username = val["username"]
-        password = val["password"]
+
+    @staticmethod
+    def from_dict(val: dict) -> None | Self: 
+        try:
+            username = val["username"]
+            password = val["password"]
+        except:
+            return None
 
         if username is None or password is None or not isinstance(username, str) or not isinstance(password, str):
-            raise ValueError("not all members are provided")
+            return None
         
-        return SignInMessage(username, password)
+        return SignInRequest(username, password)
 
     def to_dict(self) -> dict:
         return {
             "username": self.username,
             "password": self.password
         }
+    
+class CreateUserRequest:
+    def __init__(self, user: NetworkUser):
+        self.user = user
+
+    @staticmethod 
+    def from_dict(val: dict) -> Self | None:
+        try:
+            user = NetworkUser.from_dict(val.get("user", {}))
+        except:
+            return None
+        
+        if user is None:
+            return None
+        
+        return CreateUserRequest(user)
+    def to_dict(self) -> dict[str: dict]:
+        return {
+            "user": self.user.to_dict()
+        }
+    
+class AuthenticatedUser:
+    def __init__(self, user: NetworkUser, token: str):
+        self.user = user
+        self.token = token
+
+    def to_dict(self) -> dict[str: NetworkUser | str]:
+        return {
+            "user": self.user.to_dict(),
+            "token": self.token
+        }
+    
+    @staticmethod
+    def from_dict(val: dict[str: dict | str]) -> Self | None:
+        try:
+            token = val["token"]
+            user = NetworkUser.from_dict(val.get("user", {}))
+        except:
+            return None
+        
+        if token is None or user is None:
+            return None
+        
+        return AuthenticatedUser(user, token)
+
+class SignInResponse:
+    def __init__(self, ok: bool, message: str, user: None | AuthenticatedUser):
+        self.ok = ok
+        self.message = message
+        self.user = user
+    
+    def to_dict(self) -> dict[str: dict | bool | str]:
+        return {
+            "ok": self.ok,
+            "message": self.message,
+            "user": self.user.to_dict()
+        }
+    
+    @staticmethod
+    def from_dict(val: dict[str: dict | bool | str]) -> Self | None:
+        try:
+            ok = val["ok"]
+            message = val["message"]
+            user = AuthenticatedUser.from_dict(val.get("user", {}))
+        except:
+            return None
+        
+        if ok is None or message is None or user is None:
+            return None
+        
+        return SignInResponse(ok, message, user)
+
     
 def retreive_user(cur: sqlite3.Cursor, username: str) -> User | None:
     res = cur.execute("SELECT U_ID, F_NAME, L_NAME, PASSWD FROM USERS WHERE USERNAME = (?)", (username, ))

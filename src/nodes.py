@@ -62,6 +62,8 @@ class Node:
             "kind": self.kind.value,
             "tags": self.tags
         }
+    
+    @staticmethod
     def from_dict(val: dict):
         try:
             n_id = val["n_id"]
@@ -101,6 +103,7 @@ class NodeTag:
             "tag": self.tag
         }
     
+    @staticmethod
     def from_dict(val: dict) -> Self | None: 
         try:
             n_id = val["n_id"]
@@ -138,6 +141,7 @@ class Edge:
             "weight": self.weight
         }
 
+    @staticmethod
     def from_dict(val: dict[str: int | float]) -> Self | None:
         try:
             source = val["source"]
