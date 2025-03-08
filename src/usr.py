@@ -1,4 +1,6 @@
 import sqlite3
+import random
+import string
 
 class User:
     def __init__(self, u_id: int, first_name: str, last_name: str, username: str, password_hash: str):
@@ -8,9 +10,10 @@ class User:
         self.username = username
         self.password_hash = password_hash
 
-    def sql_pack(self, uid: bool) -> tuple[tuple[str]]:
+    def sql_pack(self, uid: bool) -> tuple[str | int]:
         """
-            Creates a set of tuples that can be used by sqlite for writing values
+            Creates a set of tuples that can be used by sqlite for writing values. The order is:
+            [u_id], fname, lname, username, password
         """
         if uid:
             return (
@@ -60,7 +63,7 @@ class SignInMessage:
         username = val["username"]
         password = val["password"]
 
-        if username is None or password is None:
+        if username is None or password is None or not isinstance(username, str) or not isinstance(password, str):
             raise ValueError("not all members are provided")
         
         return SignInMessage(username, password)
@@ -87,6 +90,13 @@ def write_user(cur: sqlite3.Cursor, user: User) -> bool:
     except Exception as e:
         print(f"[ERROR] Unable to insert user '{user}' because of '{e}'")
         return False
+    
+def update_user(cur: sqlite3.Cursor, user: User) -> bool:
+    try:
+        cur.execute("UPDATE USERS SET F_NAME=?, L_NAME=?, USERNAME=?, PASSWD=? WHERE U_ID=?", (user.fname, user.lname, user.username, user.password_hash, user.u_id))
+        return True
+    except:
+        return False
 
 if __name__ == "__main__":
     from db import open_db
@@ -109,7 +119,16 @@ if __name__ == "__main__":
 
                 conn.commit()
             else:
-                print(f"got user '{res}'")
+                print(f"got user '{res}' password '{res.password_hash}'")
+
+                res.password_hash = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+                if not update_user(cur, res):
+                    print("Could not update user")
+                else:
+                    print("Updated user")
+
+                    new_res = retreive_user(cur, "temporary")
+                    assert new_res.password_hash == res.password_hash
                 break
 
     conn.close()
