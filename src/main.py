@@ -19,10 +19,25 @@ def options():
     response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, ngrok-skip-browser-warning"
     return response
 
-@app.route("/", methods = ["GET"])
-def get():
-    print("INCOMING GET REQUEST RECIEVED")
-    return jsonify({"response": "Hello From Server"}), 200
+@app.route("/test", methods = ["GET"])
+def testGet():
+    print("INCOMING GET REQUEST RECEIVED -> /test")
+    return jsonify({"response": "Hello GET Server"}), 200
+
+@app.route("/test", methods = ["POST"])
+def testPost():
+    print("INCOMING POST REQUEST RECEIVED -> /test")
+    return jsonify({"response": "Hello POST Server"}), 200
+
+@app.route("/login", methods = ["GET"])
+def getLogin():
+    print("INCOMING LOGIN GET REQUEST RECEIVED -> /")
+    return jsonify({"response": "Hello GET Server"}), 200
+
+@app.route("/login", methods = ["POST"])
+def postLogin():
+    print("INCOMING LOGIN POST REQUEST RECEIVED -> /")
+    return jsonify({"response": "Hello POST Server"}), 200
 
 if __name__ == "__main__":
     print("Starting server...\n")
