@@ -37,7 +37,36 @@ def getLogin():
 @app.route("/login", methods = ["POST"])
 def postLogin():
     print("INCOMING LOGIN POST REQUEST RECEIVED -> /")
-    return jsonify({"response": "Hello POST Server"}), 200
+
+    good_payload = {
+        "ok": True,
+        "message": "Sign In Good",
+        "user": {
+            "user": {
+                "fname": "John",
+                "lname": "Doe",
+                "username": "johndoe"
+            },
+            "token": "your-auth-token-here"
+        }
+    }
+
+    bad_payload = {
+
+    }
+
+    return jsonify(good_payload), 200
+
+@app.route("/validate-token", methods = ["POST"])
+def validateToken():
+    print("INCOMING TOKEN VALIDATION POST REQUEST RECEIVED -> /")
+
+    payload = {
+        "valid": False,
+        "message": "",
+    }
+
+    return jsonify(payload), 200
 
 if __name__ == "__main__":
     print("Starting server...\n")
