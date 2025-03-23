@@ -2,22 +2,11 @@ from flask_cors import CORS
 from flask import Flask, jsonify, request, make_response
 
 app = Flask(__name__)
-CORS(app, origins = ["*"])
-
-@app.after_request
-def add_cors_headers(response):
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, ngrok-skip-browser-warning"
-    return response
-
-@app.route("/", methods=["OPTIONS"])
-def options():
-    response = make_response()
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, ngrok-skip-browser-warning"
-    return response
+CORS(app,
+     origins=["http://localhost:4200"],
+     supports_credentials=True,
+     allow_headers=["Content-Type", "Authorization", "ngrok-skip-browser-warning"]
+     )
 
 @app.route("/test", methods = ["GET"])
 def testGet():
@@ -35,6 +24,7 @@ def getLogin():
     return jsonify({"response": "Hello GET Server"}), 200
 
 @app.route("/login", methods = ["POST"])
+@app.route("/create-account", methods = ["POST"])
 def postLogin():
     print("INCOMING LOGIN POST REQUEST RECEIVED -> /")
 
@@ -62,7 +52,7 @@ def validateToken():
     print("INCOMING TOKEN VALIDATION POST REQUEST RECEIVED -> /")
 
     payload = {
-        "valid": False,
+        "valid": True,
         "message": "",
     }
 
