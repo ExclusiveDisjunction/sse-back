@@ -23,7 +23,6 @@ def ensure_tables(cur: sqlite3.Cursor) -> bool:
                         L_NAME TEXT NOT NULL,
                         PASSWD TEXT NOT NULL,
                         CONSTRAINT NAMES UNIQUE (F_NAME, L_NAME)
-                        CONSTRAINT USERNAME_U UNIQUE (USERNAME)
                     );
 
                     CREATE TABLE IF NOT EXISTS USER_SESSIONS (
@@ -38,17 +37,20 @@ def ensure_tables(cur: sqlite3.Cursor) -> bool:
                         N_ID INTEGER PRIMARY KEY,
                         X REAL NOT NULL,
                         Y REAL NOT NULL,
-                        Z INTEGER NOT NULL DEFAULT 1,
-                        NODE_NAME TEXT NOT NULL,
+                        NODE_NAME TEXT,
                         NODE_GROUP TEXT DEFAULT NULL,
-                        KIND INTEGER
+                        IS_PATH INTEGER
+                        
+                        CONSTRAINT NODE_KIND CHECK (IS_PATH IN (0, 1))
                     );
 
                     CREATE TABLE IF NOT EXISTS NODE_TAGS (
-                        N_ID INTEGER PRIMARY KEY,
+                        TAG_ID INTEGER PRIMARY KEY,
+                        N_ID INTEGER NOT NULL,
                         TAG TEXT NOT NULL,
                         
                         FOREIGN KEY (N_ID) REFERENCES NODES (N_ID) ON DELETE CASCADE ON UPDATE CASCADE
+                        CONSTRAINT ONE_TAG UNIQUE (N_ID, TAG)
                     );
 
                     CREATE TABLE IF NOT EXISTS EDGES (

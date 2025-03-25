@@ -3,12 +3,34 @@ import random
 import string
 from typing import Self
 
-class User:
-    def __init__(self, u_id: int, first_name: str, last_name: str, username: str, password_hash: str):
-        self.u_id = u_id
-        self.fname = first_name
-        self.lname = last_name
+class NetworkUser:
+    """
+    Represents a user that would be sent to a client over the network. It does not include information about passwords or tokens.
+    """
+    def __init__(self, f_name: str, l_name: str, username: str):
+        self.fname = f_name
+        self.lname = l_name
         self.username = username
+
+    def to_dict(self) -> dict:
+        return {
+            "first_name": self.fname,
+            "last_name": self.lname,
+            "username": self.username
+        }
+    
+    @staticmethod
+    def from_dict(val: dict[str: str]) -> Self | None:
+        pass
+
+
+    def __str__(self):
+        return f"{self.lname}, {self.fname} ({self.username})"
+
+class User:
+    def __init__(self, u_id: int, net: NetworkUser, password_hash: str):
+        self.u_id = u_id
+        self.net = net
         self.password_hash = password_hash
 
     def sql_pack(self, uid: bool) -> tuple[str | int]:
@@ -19,21 +41,21 @@ class User:
         if uid:
             return (
                 self.u_id,
-                self.fname,
-                self.lname,
-                self.username,
+                self.net.fname,
+                self.net.lname,
+                self.net.username,
                 self.password_hash
             )
         else:
             return (
-                self.fname,
-                self.lname,
-                self.username,
+                self.net.fname,
+                self.net.lname,
+                self.net.username,
                 self.password_hash
             )
     
     def __str__(self): 
-        return f"{self.lname}, {self.fname} ({self.username})"
+        return str(self.net)
     
     def insert_db(self, cur: sqlite3.Cursor) -> bool:
         try:
@@ -50,8 +72,11 @@ class User:
         except:
             return False
         
+    def remove_db(self, cur: sqlite3.Cursor) -> bool:
+        pass
+        
     @staticmethod
-    def lookup_db(self, cur: sqlite3.Cursor, username: str) -> Self | None:
+    def lookup_db(cur: sqlite3.Cursor, username: str) -> Self | None:
         res = cur.execute("SELECT U_ID, F_NAME, L_NAME, PASSWD FROM USERS WHERE USERNAME = (?)", (username, ))
         row = res.fetchone()
         if row is None:
@@ -61,7 +86,7 @@ class User:
         return User(u_id, f_name, l_name, username, passwd)
     
     @staticmethod
-    def get_all_users(self, cur: sqlite3.Cursor) -> list[Self] | None:
+    def get_all_users(cur: sqlite3.Cursor) -> list[Self] | None:
         result = cur.execute("SELECT U_ID, F_NAME, L_NAME, USERNAME, PASSWD FROM USERS")
         vals = result.fetchall()
         if vals is None:
@@ -73,30 +98,6 @@ class User:
 
         return return_list 
 
-class NetworkUser:
-    """
-    Represents a user that would be sent to a client over the network. It does not include information about passwords or tokens.
-    """
-    def __init__(self, user: User):
-        self.fname = user.fname
-        self.lname = user.lname
-        self.username = user.username
-
-    def to_dict(self) -> dict:
-        return {
-            "first_name": self.fname,
-            "last_name": self.lname,
-            "username": self.username
-        }
-    
-    @staticmethod
-    def from_dict(val: dict[str: str]) -> Self | None:
-        pass
-
-
-    def __str__(self):
-        return f"{self.lname}, {self.fname} ({self.username})"
-    
 class SignInRequest:
     def __init__(self, username: str, password: str):
         self.username = username
