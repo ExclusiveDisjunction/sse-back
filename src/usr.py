@@ -193,6 +193,16 @@ class SignInResponse:
         
         return SignInResponse(ok, message, user)
 
+class UserSessions:
+    def __init__(self):
+        self.users: dict[str: User] = {}
+
+    def auth_user(self, jwt: str, user: User):
+        self.users[jwt] = user
+
+    def get_auth(self, jwt: str) -> User | None:
+        self.users.get(jwt, None)
+
 if __name__ == "__main__":
     from db import open_db
 

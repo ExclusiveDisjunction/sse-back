@@ -13,7 +13,7 @@ class Graph:
     def shortest_path(self, src: int, dest: int) -> tuple[list[int], float] | None:
         pass
 
-    def path_reconstruct(self, src: int, dest: int, pred: dict[int: int]) -> list[int] | None:
+    def __path_reconstruct(self, src: int, dest: int, pred: dict[int: int]) -> list[int] | None:
         pass
 
     def __fill_edges(self):
