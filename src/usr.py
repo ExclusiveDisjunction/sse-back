@@ -34,6 +34,44 @@ class User:
     
     def __str__(self): 
         return f"{self.lname}, {self.fname} ({self.username})"
+    
+    def insert_db(self, cur: sqlite3.Cursor) -> bool:
+        try:
+            cur.execute("INSERT INTO USERS (F_NAME, L_NAME, USERNAME, PASSWD) VALUES (?, ?, ?, ?)", self.sql_pack(False))
+            return True
+        except Exception as e:
+            print(f"[ERROR] Unable to insert user '{user}' because of '{e}'")
+            return False
+        
+    def update_db(self, cur: sqlite3.Cursor) -> bool:
+        try:
+            cur.execute("UPDATE USERS SET F_NAME=?, L_NAME=?, USERNAME=?, PASSWD=? WHERE U_ID=?", (user.fname, user.lname, user.username, user.password_hash, user.u_id))
+            return True
+        except:
+            return False
+        
+    @staticmethod
+    def lookup_db(self, cur: sqlite3.Cursor, username: str) -> Self | None:
+        res = cur.execute("SELECT U_ID, F_NAME, L_NAME, PASSWD FROM USERS WHERE USERNAME = (?)", (username, ))
+        row = res.fetchone()
+        if row is None:
+            return None
+        
+        u_id, f_name, l_name, passwd = row
+        return User(u_id, f_name, l_name, username, passwd)
+    
+    @staticmethod
+    def get_all_users(self, cur: sqlite3.Cursor) -> list[Self] | None:
+        result = cur.execute("SELECT U_ID, F_NAME, L_NAME, USERNAME, PASSWD FROM USERS")
+        vals = result.fetchall()
+        if vals is None:
+            return None
+        
+        return_list = []
+        for val in vals:
+            return_list.append(User(val[0], val[1], val[2], val[3], val[4]))
+
+        return return_list 
 
 class NetworkUser:
     """
@@ -154,31 +192,6 @@ class SignInResponse:
         
         return SignInResponse(ok, message, user)
 
-    
-def retreive_user(cur: sqlite3.Cursor, username: str) -> User | None:
-    res = cur.execute("SELECT U_ID, F_NAME, L_NAME, PASSWD FROM USERS WHERE USERNAME = (?)", (username, ))
-    row = res.fetchone()
-    if row is None:
-        return None
-    
-    u_id, f_name, l_name, passwd = row
-    return User(u_id, f_name, l_name, username, passwd)
-
-def write_user(cur: sqlite3.Cursor, user: User) -> bool:
-    try:
-        cur.execute("INSERT INTO USERS (F_NAME, L_NAME, USERNAME, PASSWD) VALUES (?, ?, ?, ?)", user.sql_pack(False))
-        return True
-    except Exception as e:
-        print(f"[ERROR] Unable to insert user '{user}' because of '{e}'")
-        return False
-    
-def update_user(cur: sqlite3.Cursor, user: User) -> bool:
-    try:
-        cur.execute("UPDATE USERS SET F_NAME=?, L_NAME=?, USERNAME=?, PASSWD=? WHERE U_ID=?", (user.fname, user.lname, user.username, user.password_hash, user.u_id))
-        return True
-    except:
-        return False
-
 if __name__ == "__main__":
     from db import open_db
 
@@ -189,12 +202,12 @@ if __name__ == "__main__":
     else:
         cur = conn.cursor()
         while True:
-            res = retreive_user(cur, "temporary")
+            res: User | None = user.lookup_db(cur, "temporary")
 
             if res is None:
                 print("Did not find user, adding.")
                 user = User(0, "Alan", "Turing", "temporary", "asdfljasdlkfjasdl")
-                if not write_user(cur, user):
+                if not user.insert_db(cur):
                     print("Unable to write user")
                     break 
 
@@ -203,12 +216,12 @@ if __name__ == "__main__":
                 print(f"got user '{res}' password '{res.password_hash}'")
 
                 res.password_hash = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-                if not update_user(cur, res):
+                if not res.update_db(cur):
                     print("Could not update user")
                 else:
                     print("Updated user")
 
-                    new_res = retreive_user(cur, "temporary")
+                    new_res = User.lookup_db(cur, "temporary")
                     assert new_res.password_hash == res.password_hash
                 break
 
