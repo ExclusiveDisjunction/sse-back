@@ -37,16 +37,52 @@ class NodeAttributes:
 
 class DBNode:
     def __init__(self, n_id: int, loc: GraphNode, attr: NodeAttributes):
-        pass
+        self.n_id = n_id 
+        self.loc = loc
+        self.attr = attr
+
+    def __sql_pack(self, include_id: bool) -> tuple:
+        if include_id:
+            return (
+                self.n_id,
+                self.loc.x,
+                self.loc.y,
+                self.attr.name,
+                self.attr.group,
+                1 if self.attr.is_path else 0
+            )
+        else:
+            return (
+                self.loc.x,
+                self.loc.y,
+                self.attr.name,
+                self.attr.group,
+                1 if self.attr.is_path else 0
+            )
 
     def insert_db(self, cur: sqlite3.Cursor) -> bool:
-        pass
+        try:
+            cur.execute("INSERT INTO NODES(X, Y, NODE_NAME, NODE_GROUP, IS_PATH) VALUES (?, ?, ?, ?, ?)", self.__sql_pack(False))
+            return True 
+        except Exception as e:
+            print(f"[ERROR] Unable to insert node because '{e}'")
+            return False
 
     def update_db(self, cur: sqlite3.Cursor) -> bool:
-        pass
+        try:
+            cur.execute("UPDATE NODES SET X=?, Y=?, NODE_NAME=?, NODE_GROUP=?, IS_PATH=? WHERE N_ID=?", self.__sql_pack(False) + self.n_id)
+            return True 
+        except Exception as e:
+            print(f"[ERROR] Unable to update node because '{e}'")
+            return False
 
     def delete_db(self, cur: sqlite3.Cursor) -> bool:
-        pass
+        try:
+            cur.execute("DELETE FROM NODES WHERE N_ID=?", (self.n_id))
+            return True
+        except Exception as e:
+            print(f"[ERROR] Unable to delete node because '{e}'")
+            return False
 
 class NodeTags:
     def __init__(self, n_id: int, tags: list[str]):
@@ -72,18 +108,34 @@ class NetworkNode:
             "tags": self.tags.to_list() # [str]
         }
 
-def get_all_nodes(cur: sqlite3.Cursor) -> dict[int, NetworkNode] | None:
+def get_db_nodes(cur: sqlite3.Cursor) -> dict[int: DBNode] | None:
     pass
 
-def strip_nodes(vals: dict[int, NetworkNode]) -> dict[int, GraphNode]:
+def strip_nodes(vals: dict[int, NetworkNode]) -> dict[int: GraphNode]:
     result = {}
     for (key, val) in vals.items():
         result[key] = val.loc
 
     return result 
 
-def to_db(vals: dict[int, NetworkNode]) -> list[tuple[DBNode, NodeTags]]:
+def get_db_edges(cur: sqlite3.Cursor) -> list[GraphEdge] | None:
     pass
+
+def get_db_node_tags(cur: sqlite3.Cursor) -> dict[int: str] | None:
+    pass
+
+def zip_nodes_and_tags(nodes: dict[int: DBNode], tags: dict[int: str]) -> dict[int: NetworkNode]:
+    result: dict[int: NetworkNode] = {}
+    for (id, node) in nodes.items():
+        result[id] = NetworkNode(node.loc, node.attr, NodeTags(id, []))
+
+    for (id, tag) in tags.items():
+        if id not in result:
+            raise ValueError(f"The node id referenced by tag '{tag}', id: '{id}' was not found in the nodes.")
+        
+        result[id].tags.inner.append(tag)
+
+    return result 
 
 """
 class Node:

@@ -73,7 +73,12 @@ class User:
             return False
         
     def remove_db(self, cur: sqlite3.Cursor) -> bool:
-        pass
+        try:
+            cur.execute("DELETE FROM USERS WHERE U_ID=?", (self.u_id))
+            return True
+        except Exception as e:
+            print(f"[ERROR] Unable to delete user because '{e}'")
+            return False
         
     @staticmethod
     def lookup_db(cur: sqlite3.Cursor, username: str) -> Self | None:

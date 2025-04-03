@@ -32,7 +32,7 @@ def add_cors_headers(response):
 def login_page():
     data = request.get_json()
     try:
-        message = SignInMessage.from_dict(data)
+        message = SignInRequest.from_dict(data)
     except ValueError as e:
         print(f"Got error: {e}")
         return jsonify({"invalid": "unable to get sign in message"})
