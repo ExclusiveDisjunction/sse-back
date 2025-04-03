@@ -62,28 +62,51 @@ def validateToken():
 def getMapNodes():
     print("INCOMING GET REQUEST RECEIVED -> /map-nodes")
 
+    # payload = {
+    #     "nodes": {
+    #         1: {
+    #             "x": 570,
+    #             "y": 326,
+    #             "name": "name",
+    #             "group": "group",
+    #             "kind": 0,
+    #             "tags": [
+    #                 "tag1"
+    #             ]
+    #         },
+    #         2: {
+    #             "x": 586,
+    #             "y": 313,
+    #             "name": "name",
+    #             "group": "group",
+    #             "kind": 0,
+    #             "tags": [
+    #                 "tag1"
+    #             ]
+    #         }
+    #     }
+    # }
+
     payload = {
-        "nodes": {
-            1: {
-                "x": 1,
-                "y": 2,
-                "name": "name",
-                "group": "group",
-                "kind": 0,
-                "tags": [
-                    "tag1"
-                ]
-            },
-            2: {
-                "x": 1,
-                "y": 2,
-                "name": "name",
-                "group": "group",
-                "kind": 0,
-                "tags": [
-                    "tag1"
-                ]
-            }
+        1: {
+            "x": 570,
+            "y": 326,
+            "name": "name",
+            "group": "group",
+            "kind": 0,
+            "tags": [
+                "tag1"
+            ]
+        },
+        2: {
+            "x": 586,
+            "y": 313,
+            "name": "name",
+            "group": "group",
+            "kind": 0,
+            "tags": [
+                "tag1"
+            ]
         }
     }
 
