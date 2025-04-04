@@ -109,7 +109,16 @@ class NetworkNode:
         }
 
 def get_db_nodes(cur: sqlite3.Cursor) -> dict[int: DBNode] | None:
-    pass
+    result = cur.execute("SELECT N_ID, X, Y, NODE_NAME, NODE_GROUP, IS_PATH FROM NODES")
+    vals = result.fetchall()
+    if vals is None:
+        return None
+    
+    result = {}
+    for val in vals:
+        result[val[0]] = DBNode(val[0], GraphNode(val[1], val[2]), NodeAttributes(val[3], val[4], val[5] == 1))
+
+    return result 
 
 def strip_nodes(vals: dict[int, NetworkNode]) -> dict[int: GraphNode]:
     result = {}
@@ -119,12 +128,28 @@ def strip_nodes(vals: dict[int, NetworkNode]) -> dict[int: GraphNode]:
     return result 
 
 def get_db_edges(cur: sqlite3.Cursor) -> list[GraphEdge] | None:
-    pass
+    result = cur.execute("SELECT SOURCE, DESTINATION FROM EDGES")
+    vals = result.fetchall()
+    if vals is None:
+        return None
+    
+    result = []
+    for val in vals:
+        result.append(GraphEdge(val[0], val[1]))
 
-def get_db_node_tags(cur: sqlite3.Cursor) -> dict[int: str] | None:
-    pass
+def get_db_node_tags(cur: sqlite3.Cursor) -> dict[int: list[str]] | None:
+    result = cur.execute("SELECT N_ID, TAG FROM NODE_TAGS")
+    vals = result.fetchall()
+    if vals is None:
+        return None
+    
+    result: dict[int: list[str]] = {}
+    for val in vals:
+        current_list = result.get(val[0], [])
+        current_list.append(val[1])
+        result[val[0]] = current_list 
 
-def zip_nodes_and_tags(nodes: dict[int: DBNode], tags: dict[int: str]) -> dict[int: NetworkNode]:
+def zip_nodes_and_tags(nodes: dict[int: DBNode], tags: dict[int: list[str]]) -> dict[int: NetworkNode]:
     result: dict[int: NetworkNode] = {}
     for (id, node) in nodes.items():
         result[id] = NetworkNode(node.loc, node.attr, NodeTags(id, []))
