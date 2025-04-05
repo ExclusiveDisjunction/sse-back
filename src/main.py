@@ -5,7 +5,7 @@ app = Flask(__name__)
 CORS(app,
      origins=["http://localhost:4200"],
      supports_credentials=True,
-     allow_headers=["Content-Type", "Authorization", "ngrok-skip-browser-warning", "token", "lat", "long"]
+     allow_headers=["Content-Type", "Authorization", "ngrok-skip-browser-warning", "token", "lat", "long", "start", "end"]
      )
 
 @app.route("/test", methods = ["GET"])
@@ -108,6 +108,16 @@ def getMapNodes():
                 "tag1"
             ]
         }
+    }
+
+    return jsonify(payload), 200
+
+@app.route("/traverse", methods = ["GET"])
+def fetchNodesToTraverse():
+    print("INCOMING GET REQUEST RECEIVED -> /traverse")
+
+    payload = {
+        "ids": [1, 2, 3, 4]
     }
 
     return jsonify(payload), 200
