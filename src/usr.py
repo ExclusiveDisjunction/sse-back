@@ -67,6 +67,7 @@ class User:
     def insert_db(self, cur: sqlite3.Cursor) -> bool:
         try:
             cur.execute("INSERT INTO USERS (F_NAME, L_NAME, USERNAME, PASSWD) VALUES (?, ?, ?, ?)", self.sql_pack(False))
+            self.u_id = int(cur.lastrowid())
             return True
         except Exception as e:
             print(f"[ERROR] Unable to insert user '{user}' because of '{e}'")
@@ -135,23 +136,26 @@ class SignInRequest:
         }
     
 class CreateUserRequest:
-    def __init__(self, user: NetworkUser):
+    def __init__(self, user: NetworkUser, password_hash: str):
         self.user = user
+        self.password = password_hash
 
     @staticmethod 
     def from_dict(val: dict) -> Self | None:
         try:
             user = NetworkUser.from_dict(val.get("user", {}))
+            password = val["password"]
         except:
             return None
         
-        if user is None:
+        if user is None or password is None:
             return None
         
-        return CreateUserRequest(user)
+        return CreateUserRequest(user, password)
     def to_dict(self) -> dict[str: dict]:
         return {
-            "user": self.user.to_dict()
+            "user": self.user.to_dict(),
+            "password": self.password
         }
     
 class AuthenticatedUser:
@@ -214,6 +218,13 @@ class UserSessions:
 
     def get_auth(self, jwt: str) -> User | None:
         self.users.get(jwt, None)
+
+    def user_signed_in(self, target: User) -> str | None:
+        for (jwt, user) in self.users.items():
+            if user == target:
+                return jwt
+            
+        return None 
 
 if __name__ == "__main__":
     from db import open_db

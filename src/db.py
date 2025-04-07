@@ -55,12 +55,12 @@ def ensure_tables(cur: sqlite3.Cursor) -> bool:
 
                     CREATE TABLE IF NOT EXISTS EDGES (
                         SOURCE INTEGER NOT NULL,
-                        DESTIONATION INTEGER NOT NULL,
+                        DESTINATION INTEGER NOT NULL,
 
-                        CONSTRAINT PK1 PRIMARY KEY (SOURCE, DESTIONATION),
+                        CONSTRAINT PK1 PRIMARY KEY (SOURCE, DESTINATION),
 
                         FOREIGN KEY (SOURCE) REFERENCES NODES (N_ID) ON DELETE CASCADE ON UPDATE CASCADE,
-                        FOREIGN KEY (DESTIONATION) REFERENCES NODES (N_ID) ON DELETE CASCADE ON UPDATE CASCADE
+                        FOREIGN KEY (DESTINATION) REFERENCES NODES (N_ID) ON DELETE CASCADE ON UPDATE CASCADE
                     );
                     """)
         

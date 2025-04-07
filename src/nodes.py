@@ -120,7 +120,7 @@ def get_db_nodes(cur: sqlite3.Cursor) -> dict[int: DBNode] | None:
 
     return result 
 
-def strip_nodes(vals: dict[int, NetworkNode]) -> dict[int: GraphNode]:
+def strip_nodes(vals: dict[int, DBNode]) -> dict[int: GraphNode]:
     result = {}
     for (key, val) in vals.items():
         result[key] = val.loc
@@ -137,6 +137,8 @@ def get_db_edges(cur: sqlite3.Cursor) -> list[GraphEdge] | None:
     for val in vals:
         result.append(GraphEdge(val[0], val[1]))
 
+    return result 
+
 def get_db_node_tags(cur: sqlite3.Cursor) -> dict[int: list[str]] | None:
     result = cur.execute("SELECT N_ID, TAG FROM NODE_TAGS")
     vals = result.fetchall()
@@ -148,6 +150,8 @@ def get_db_node_tags(cur: sqlite3.Cursor) -> dict[int: list[str]] | None:
         current_list = result.get(val[0], [])
         current_list.append(val[1])
         result[val[0]] = current_list 
+
+    return result 
 
 def zip_nodes_and_tags(nodes: dict[int: DBNode], tags: dict[int: list[str]]) -> dict[int: NetworkNode]:
     result: dict[int: NetworkNode] = {}
@@ -161,83 +165,3 @@ def zip_nodes_and_tags(nodes: dict[int: DBNode], tags: dict[int: list[str]]) -> 
         result[id].tags.inner.append(tag)
 
     return result 
-
-"""
-class Node:
-    def __init__(self, n_id: int, x: float, y: float, z: int, name: str, group: str | None, is_path: bool, tags: list[str] = []):
-        self.n_id = n_id
-        self.x = x
-        self.y = y
-        self.z = z
-        self.name = name
-        self.group = group
-        self.is_path = is_path 
-        self.tags = tags
-
-    def sql_pack(self, id: bool) -> tuple[int | float | str]:
-        
-        Creates a tuple that can be used for sqlite writing values. The order is:
-        [n_id], x, y, z, name, group, kind
-        
-        if id:
-            return (
-                self.n_id,
-                self.x, 
-                self.y,
-                self.z, 
-                self.name,
-                self.group,
-                1 if self.is_path else 0
-            )
-        else:
-            return (
-                self.x, 
-                self.y,
-                self.z, 
-                self.name,
-                self.group,
-                1 if self.is_path else 0 
-            )
-        
-    def __str__(self):
-        return f"Node: (x: {self.x}, y: {self.y}, floor: {self.z}) \"{self.name}\""
-    
-    def __eq__(self, other: Self) -> bool:
-        return isinstance(other, Node) and self.n_id == other.n_id and self.x == other.x and self.y == other.y and self.z == other.z and self.name == other.name and self.group == other.group and self.kind == other.kind 
-    
-    def to_dict(self) -> dict:
-        return {
-            "n_id": self.n_id,
-            "x": self.x,
-            "y": self.y,
-            "z": self.z,
-            "name": self.name,
-            "group": self.group,
-            "is_path": self.is_path,
-            "tags": self.tags
-        }
-    
-    @staticmethod
-    def from_dict(val: dict):
-        try:
-            n_id = val["n_id"]
-            x = val["x"]
-            y = val["y"]
-            z = val["z"]
-            name = val["name"]
-            group = val["group"]
-            kind = val["kind"] == 1
-            tags = val.get("tags", [])
-        except: 
-            return None
-        
-        # Note that Group is allowed to be none.
-        if n_id is None or x is None or y is None or z is None or name is None or kind is None:
-            return None
-        
-        if not isinstance(n_id, int) or not isinstance(x, float) or not isinstance(y, float) or not isinstance(z, int) or not isinstance(name, str):
-            return None
-        
-        return Node(n_id, x, y, z, name, group, kind, tags)
-    
-"""
