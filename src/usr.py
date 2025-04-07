@@ -21,7 +21,14 @@ class NetworkUser:
     
     @staticmethod
     def from_dict(val: dict[str: str]) -> Self | None:
-        pass
+        try:
+            first_name = val["first_name"]
+            last_name = val["last_name"]
+            username = val["username"]
+        except:
+            return None
+        
+        return NetworkUser(first_name, last_name, username)
 
 
     def __str__(self):

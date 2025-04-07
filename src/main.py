@@ -1,6 +1,15 @@
 from flask_cors import CORS
 from flask import Flask, jsonify, request, make_response
 
+import sqlite3
+from usr import SignInRequest, SignInResponse, UserSessions, NetworkUser, User, AuthenticatedUser
+
+active_users = UserSessions()
+db: sqlite3.Connection = None
+
+def generate_token() -> str: 
+    pass
+
 app = Flask(__name__)
 CORS(app,
      origins=["http://localhost:4200"],
@@ -18,14 +27,34 @@ def testPost():
     print("INCOMING POST REQUEST RECEIVED -> /test")
     return jsonify({"response": "Hello POST Server"}), 200
 
-@app.route("/login", methods = ["GET"])
-def getLogin():
-    print("INCOMING LOGIN GET REQUEST RECEIVED -> /login")
-    return jsonify({"response": "Hello GET Server"}), 200
-
 @app.route("/login", methods = ["POST"])
+def loginRequest():
+    global active_users
+    global db
+
+    msg = request.get_json()
+    decoded: SignInRequest | None = SignInRequest.from_dict(msg)
+    if decoded is None:
+        return jsonify(SignInResponse(False, "Unable to decode request", None).to_dict()), 400
+    
+    if db is None:
+        return jsonify(SignInResponse(False, "User authentication service is unavailable").to_dict()), 503
+
+    found: User | None = User.lookup_db(db.cursor(), decoded.fname)
+    if found is None:
+        return jsonify(SignInResponse(False, "User credentials could not be found.").to_dict()), 401
+    
+    if found.password_hash != decoded.password: 
+        return jsonify(SignInResponse(False, "User credentials did not match.").to_dict()), 401
+
+    token = generate_token()
+    active_users.auth_user(token, found)
+
+    auth_user = AuthenticatedUser(found.net, token)
+    return jsonify(SignInResponse(True, "", auth_user).to_dict())
+
 @app.route("/create-account", methods = ["POST"])
-def postLogin():
+def createAccountRequest():
     print("INCOMING LOGIN POST REQUEST RECEIVED -> /create-account or /login")
 
     good_payload = {
