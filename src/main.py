@@ -2,6 +2,8 @@ from flask_cors import CORS
 from flask import Flask, jsonify, request, make_response
 
 import sqlite3
+import jwt
+import datetime
 from usr import SignInRequest, SignInResponse, UserSessions, User, AuthenticatedUser, CreateUserRequest
 from nodes import NetworkNode, get_db_nodes, get_db_node_tags, get_db_edges, strip_nodes, zip_nodes_and_tags
 from graph import Graph
@@ -12,8 +14,23 @@ db: sqlite3.Connection = None
 graph: Graph = None
 nodes: dict[int: NetworkNode] = {}
 
-def generate_token() -> str: 
-    pass
+SECRET_KEY = "jwt-encryption"
+
+def generate_token(user: User) -> str: 
+    payload = {
+        "sub": user.net.username,
+        "name": user.net.fname,
+        "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=2)
+    }
+
+    return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+
+def is_token_valid(token: str) -> bool:
+    try:
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        return True
+    except: 
+        return False
 
 app = Flask(__name__)
 CORS(app,
@@ -85,14 +102,19 @@ def createAccountRequest():
 
 @app.route("/validate-token", methods = ["POST"])
 def validateToken():
-    print("INCOMING TOKEN VALIDATION POST REQUEST RECEIVED -> /validate-token")
+    token = request.get_json()
+    jwt = token["token"]
 
-    payload = {
-        "valid": True,
-        "message": "",
-    }
-
-    return jsonify(payload), 200
+    if is_token_valid(jwt):
+        return jsonify({ 
+            "valid": True,
+            "message": ""
+        }), 200
+    else: 
+        return jsonify( {
+            "valid": False,
+            "message": "Token is expired"
+        }), 200
 
 @app.route("/map-nodes", methods = ["GET"])
 def getMapNodes():
@@ -106,13 +128,24 @@ def getMapNodes():
 
 @app.route("/traverse", methods = ["GET"])
 def fetchNodesToTraverse():
-    print("INCOMING GET REQUEST RECEIVED -> /traverse")
+    global graph 
 
-    payload = {
-        "ids": [1, 2, 3, 4]
-    }
+    jwt = request.args.get("token", None, type=str)
+    source = request.args.get("src", None, type=int)
+    dest = request.args.get("dest", None, type=int)
 
-    return jsonify(payload), 200
+    if jwt is None or source is None or dest is None:
+        return jsonify({}), 400
+
+    if not is_token_valid(jwt):
+        return jsonify({}), 401
+    
+    result = graph.shortest_path(source, int)
+    if result is None:
+        return jsonify({}), 404
+    
+    nodes = result[0]
+    return jsonify(nodes), 200
 
 if __name__ == "__main__":
     print("Starting server...\n")
