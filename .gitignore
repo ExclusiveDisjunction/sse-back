@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 
 *.sqlite
+*.DS_Store
 
 .vscode/
 .idea/
