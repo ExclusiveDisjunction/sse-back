@@ -1,19 +1,31 @@
+"""
+Simple utilities to manage the database & its connections.
+"""
+
 import sqlite3
 
 def open_db(path: str) -> sqlite3.Connection | None:
+    """
+    Opens the database at `path`, and runs the `ensure_tables` function.
+    """
     try:
         conn = sqlite3.connect(path)
-    except Exception as e:
-        print(f"Unable to open database because of '{e}'")
+    except sqlite3.DatabaseError as e:
+        print(f"Database Error: '{e}'")
         return None
-    
+    except sqlite3.Error as e:
+        print(f"General SQLite Error: '{e}'")
+
     cur = conn.cursor()
     if not ensure_tables(cur):
         return None
-    
+
     return conn
 
 def ensure_tables(cur: sqlite3.Cursor) -> bool:
+    """
+    Runs the create table scripts, if the tables do not exist.
+    """
     try:
         cur.executescript("""
                     CREATE TABLE IF NOT EXISTS USERS (
@@ -21,7 +33,8 @@ def ensure_tables(cur: sqlite3.Cursor) -> bool:
                         USERNAME TEXT NOT NULL, 
                         F_NAME TEXT NOT NULL,
                         L_NAME TEXT NOT NULL,
-                        PASSWD TEXT NOT NULL,
+                        PASSWD BLOB NOT NULL,
+                        SALT BLOB NOT NULL,
                         CONSTRAINT NAMES UNIQUE (F_NAME, L_NAME)
                     );
 
@@ -63,7 +76,8 @@ def ensure_tables(cur: sqlite3.Cursor) -> bool:
                         FOREIGN KEY (DESTINATION) REFERENCES NODES (N_ID) ON DELETE CASCADE ON UPDATE CASCADE
                     );
                     """)
-        
+
         return True
-    except:
+    except sqlite3.Error as e:
+        print(f"Unable to create tables '{e}'")
         return False
