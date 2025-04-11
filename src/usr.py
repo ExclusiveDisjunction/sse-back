@@ -95,6 +95,7 @@ class User:
             return False
         except sqlite3.DataError as e:
             print(f"[ERROR] Data error on DB insert '{e}'")
+            return False
 
     def update_db(self, cur: sqlite3.Cursor) -> bool:
         """
@@ -127,6 +128,7 @@ class User:
             return False
         except sqlite3.DataError as e:
             print(f"[ERROR] Data error on DB delete '{e}'")
+            return False
 
     @staticmethod
     def lookup_db(cur: sqlite3.Cursor, username: str) -> Self | None:
@@ -191,15 +193,6 @@ class SignInRequest:
 
         return SignInRequest(username, password)
 
-    def to_dict(self) -> dict:
-        """
-        Converts this instance into a `dict`, for JSON serializing. 
-        """
-        return {
-            "username": self.username,
-            "password": self.password
-        }
-
 class CreateUserRequest:
     """
     Represents a request from the client to create a new user 
@@ -225,15 +218,6 @@ class CreateUserRequest:
 
         return CreateUserRequest(user, password)
 
-    def to_dict(self) -> dict[str: dict]:
-        """
-        Converts this instance into a `dict`, for JSON serializing. 
-        """
-        return {
-            "user": self.user.to_dict(),
-            "password": self.password
-        }
-
 class AuthenticatedUser:
     """
     Combines a `NetworkUser` with a specific JWT token.
@@ -250,22 +234,6 @@ class AuthenticatedUser:
             "user": self.user.to_dict(),
             "token": self.token
         }
-
-    @staticmethod
-    def from_dict(val: dict[str: dict | str]) -> Self | None:
-        """
-        Attempts to convert a dictonary to an instance of `AuthenticatedUser`.
-        """
-        try:
-            token = val["token"]
-            user = NetworkUser.from_dict(val.get("user", {}))
-        except KeyError:
-            return None
-
-        if token is None or user is None:
-            return None
-
-        return AuthenticatedUser(user, token)
 
 class SignInResponse:
     """
@@ -285,23 +253,6 @@ class SignInResponse:
             "message": self.message,
             "user": self.user.to_dict()
         }
-
-    @staticmethod
-    def from_dict(val: dict[str: dict | bool | str]) -> Self | None:
-        """
-        Attempts to convert a dictonary to an instance of `SignInResponse`.
-        """
-        try:
-            ok = val["ok"]
-            message = val["message"]
-            user = AuthenticatedUser.from_dict(val.get("user", {}))
-        except KeyError:
-            return None
-
-        if ok is None or message is None or user is None:
-            return None
-
-        return SignInResponse(ok, message, user)
 
 class UserSessions:
     """
