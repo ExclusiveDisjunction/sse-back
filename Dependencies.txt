@@ -1,0 +1,6 @@
+bcrypt
+PyJWT
+flask
+flask_cors
+numpy
+pandas
