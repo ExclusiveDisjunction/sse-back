@@ -195,7 +195,7 @@ class SignInResponse:
         return {
             "ok": self.ok,
             "message": self.message,
-            "user": self.jwt
+            "token": self.jwt
         }
 
 class UserSessions:

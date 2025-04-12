@@ -12,6 +12,8 @@ from flask_cors import CORS
 from flask import Flask, jsonify, request
 import jwt
 import bcrypt
+import random
+import string
 
 from src.usr import create_user_dict
 from usr import SignInRequest, SignInResponse, UserSessions, User, CreateUserRequest
@@ -45,21 +47,13 @@ CORS(app,
      expose_headers=["Content-Type", "Authorization"]
      )
 
-@app.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:4200')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,ngrok-skip-browser-warning,token,lat,long,start,end')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
-    return response
-
 def generate_token(user: User) -> str:
     """
     Generates a JWT token for the passed `User`. 
     """
     payload = {
         "sub": user.username,
-        "name": user.username,
+        "name": ''.join(random.choices(string.ascii_uppercase + string.digits, k=10)),
         "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=2)
     }
 
@@ -75,15 +69,9 @@ def is_token_valid(token: str) -> bool:
     except jwt.ExpiredSignatureError:
         print("Token is expired")
         return False
-    except jwt.InvalidTokenError:
-        print("The token is invalid")
+    except jwt.InvalidTokenError as e:
+        print(f"The token is invalid '{e}'")
         return False
-
-@app.route('/login', methods=['OPTIONS'])
-def handle_options():
-    # This route handles the preflight OPTIONS request
-    response = app.make_default_options_response()
-    return response
 
 @app.route("/login", methods = ["POST"])
 def login_request():
@@ -130,6 +118,7 @@ def login_request():
 
     token = generate_token(found)
     active_users.auth_user(token, found)
+    print(f"giving JWT '{token}'")
 
     return jsonify(SignInResponse(True, "", token).to_dict()), 200
 
@@ -167,6 +156,7 @@ def create_account_request():
 
     token = generate_token(db_user)
     active_users.auth_user(token, db_user)
+    print(f"giving JWT '{token}'")
 
     return jsonify(SignInResponse(True, "", token).to_dict()), 200
 
@@ -177,6 +167,7 @@ def validate_token():
     """
     token = request.get_json()
     ret_jwt = token["token"]
+    print(f"got token {ret_jwt}")
 
     if is_token_valid(ret_jwt):
         return jsonify({
