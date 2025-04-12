@@ -4,34 +4,62 @@ Stores the initial server interface using FLASK.
 
 import sys
 import datetime
-import sqlite3
+from typing import Optional
+
+# import sqlite3
 
 from flask_cors import CORS
 from flask import Flask, jsonify, request
 import jwt
 import bcrypt
 
-from usr import SignInRequest, SignInResponse, UserSessions, User
-from usr import AuthenticatedUser, CreateUserRequest, NetworkUser
+from src.usr import create_user_dict
+from usr import SignInRequest, SignInResponse, UserSessions, User, CreateUserRequest
 from nodes import NetworkNode, get_db_nodes, get_db_node_tags
 from nodes import get_db_edges, strip_nodes, zip_nodes_and_tags
 from graph import Graph
 from db import open_db
 
 active_users = UserSessions()
-db: sqlite3.Connection = None
-graph: Graph = None
+# db: sqlite3.Connection = None
+graph: Graph
 nodes: dict[int: NetworkNode] = {}
+all_users: dict[str: User] = {}
+new_users: list[User] = []
 
 SECRET_KEY = "jwt-encryption"
+
+app = Flask(__name__)
+CORS(app,
+     origins=["http://localhost:4200"],
+     supports_credentials=True,
+     methods=["GET", "POST", "OPTIONS"],
+     allow_headers=["Content-Type",
+                    "Authorization",
+                    "ngrok-skip-browser-warning",
+                    "token",
+                    "lat",
+                    "long",
+                    "start",
+                    "end"],
+     expose_headers=["Content-Type", "Authorization"]
+     )
+
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:4200')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,ngrok-skip-browser-warning,token,lat,long,start,end')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    return response
 
 def generate_token(user: User) -> str:
     """
     Generates a JWT token for the passed `User`. 
     """
     payload = {
-        "sub": user.net.username,
-        "name": user.net.fname,
+        "sub": user.username,
+        "name": user.username,
         "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=2)
     }
 
@@ -51,19 +79,11 @@ def is_token_valid(token: str) -> bool:
         print("The token is invalid")
         return False
 
-app = Flask(__name__)
-CORS(app,
-     origins=["http://localhost:4200"],
-     supports_credentials=True,
-     allow_headers=["Content-Type",
-                    "Authorization", 
-                    "ngrok-skip-browser-warning",
-                    "token", 
-                    "lat", 
-                    "long", 
-                    "start", 
-                    "end"]
-     )
+@app.route('/login', methods=['OPTIONS'])
+def handle_options():
+    # This route handles the preflight OPTIONS request
+    response = app.make_default_options_response()
+    return response
 
 @app.route("/login", methods = ["POST"])
 def login_request():
@@ -78,21 +98,16 @@ def login_request():
     if decoded is None:
         return jsonify(SignInResponse(False, "Unable to decode request", None).to_dict()), 400
 
-    if db is None:
-        return jsonify(
-            SignInResponse(
-                False,
-                "User authentication service is unavailable",
-                None
-            ).to_dict()
-        ), 503
+    try:
+        found: Optional[User] = all_users[decoded.username]
+    except KeyError:
+        found = None
 
-    found: User = User.lookup_db(db.cursor(), decoded.username)
     if found is None:
         return jsonify(
             SignInResponse(
                 False,
-                "User credentials could not be found.", 
+                "User credentials could not be found.",
                 None
             ).to_dict()
         ), 401
@@ -116,8 +131,7 @@ def login_request():
     token = generate_token(found)
     active_users.auth_user(token, found)
 
-    auth_user = AuthenticatedUser(found.net, token)
-    return jsonify(SignInResponse(True, "", auth_user).to_dict()), 200
+    return jsonify(SignInResponse(True, "", token).to_dict()), 200
 
 @app.route("/create-account", methods = ["POST"])
 def create_account_request():
@@ -130,18 +144,11 @@ def create_account_request():
     if decoded is None:
         return jsonify(SignInResponse(False, "Unable to decode request", None).to_dict()), 400
 
-    user_to_make: NetworkUser = decoded.user
+    try:
+        found = all_users[decoded.username]
+    except KeyError:
+        found = None
 
-    if db is None:
-        return jsonify(
-            SignInResponse(
-                False,
-                "User authentication service is unavailable",
-                None
-            ).to_dict()
-        ), 503
-
-    found: User = User.lookup_db(db.cursor(), user_to_make.username)
     if found is not None:
         return jsonify(
             SignInResponse(
@@ -151,20 +158,17 @@ def create_account_request():
             ).to_dict()
         ), 409
 
-    if active_users.user_signed_in(found) is not None:
-        return jsonify(SignInResponse(False, "The user is already signed in.", None).to_dict()), 409
-
     salt = bcrypt.gensalt()
     password = bcrypt.hashpw(decoded.password, salt)
-    db_user = User(0, user_to_make, password, salt)
-    if not db_user.insert_db(db.cursor()):
-        return jsonify(SignInResponse(False, "The user could not be created.", None).to_dict()), 417
+    db_user = User(0, decoded.username, password, salt)
+
+    all_users[db_user.username] = db_user
+    new_users.append(db_user)
 
     token = generate_token(db_user)
     active_users.auth_user(token, db_user)
 
-    auth_user = AuthenticatedUser(user_to_make, token)
-    return jsonify(SignInResponse(True, "", auth_user).to_dict()), 200
+    return jsonify(SignInResponse(True, "", token).to_dict()), 200
 
 @app.route("/validate-token", methods = ["POST"])
 def validate_token():
@@ -203,9 +207,9 @@ def fetch_nodes_to_traverse():
     This requires JWT authentication. 
     """
 
-    get_jwt = request.args.get("token", None, type=str)
-    source = request.args.get("src", None, type=int)
-    dest = request.args.get("dest", None, type=int)
+    get_jwt = request.args.get("token", None)
+    source = request.args.get("src", 0, type=int)
+    dest = request.args.get("dest", 0, type=int)
 
     if get_jwt is None or source is None or dest is None:
         return jsonify({}), 400
@@ -213,7 +217,7 @@ def fetch_nodes_to_traverse():
     if not is_token_valid(get_jwt):
         return jsonify({}), 401
 
-    result = graph.shortest_path(source, int)
+    result = graph.shortest_path(source, dest)
     if result is None:
         return jsonify({}), 404
 
@@ -228,9 +232,13 @@ if __name__ == "__main__":
         print("Unable to open database. Exiting")
         sys.exit(1)
 
-    db_nodes = get_db_nodes(db.cursor())
-    db_edges = get_db_edges(db.cursor())
-    db_tags = get_db_node_tags(db.cursor())
+    cursor = db.cursor()
+    db_nodes = get_db_nodes(cursor)
+    db_edges = get_db_edges(cursor)
+    db_tags = get_db_node_tags(cursor)
+    db_users = User.get_all_users(cursor)
+
+    all_users = create_user_dict(db_users)
 
     if db_nodes is None or db_edges is None or db_tags is None:
         print("Unable to get database information. Exiting")
@@ -241,7 +249,10 @@ if __name__ == "__main__":
 
     nodes = zip_nodes_and_tags(db_nodes, db_tags)
 
-    app.run(debug = False)
+    app.run(debug = True)
+
+    for new_user in new_users:
+        new_user.insert_db(cursor)
 
     db.commit()
     # app.run(debug = True, ssl_context = ('server.crt', 'server.key'))
