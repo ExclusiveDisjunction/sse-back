@@ -118,7 +118,6 @@ def login_request():
 
     token = generate_token(found)
     active_users.auth_user(token, found)
-    print(f"giving JWT '{token}'")
 
     return jsonify(SignInResponse(True, "", token).to_dict()), 200
 
@@ -156,7 +155,6 @@ def create_account_request():
 
     token = generate_token(db_user)
     active_users.auth_user(token, db_user)
-    print(f"giving JWT '{token}'")
 
     return jsonify(SignInResponse(True, "", token).to_dict()), 200
 
@@ -167,7 +165,6 @@ def validate_token():
     """
     token = request.get_json()
     ret_jwt = token["token"]
-    print(f"got token {ret_jwt}")
 
     if is_token_valid(ret_jwt):
         return jsonify({
@@ -179,6 +176,19 @@ def validate_token():
         "valid": False,
         "message": "Token is expired"
     }), 200
+
+@app.route("/sign-out", methods = ["POST"])
+def sign_out():
+    """
+    Removes the user's JWT from the server
+    """
+
+    print("got sign out request from user")
+    token = request.get_json()
+    ret_jwt = token["token"]
+
+    if ret_jwt in active_users.users:
+        active_users.users.remove(ret_jwt)
 
 @app.route("/map-nodes", methods = ["GET"])
 def get_map_nodes():

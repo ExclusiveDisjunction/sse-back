@@ -10,7 +10,7 @@ if __name__ == "__main__":
     df = pandas.read_csv("graph_nodes.csv")
     df.info()
 
-    db = open_db("../data.sqlite")
+    db = open_db("data.sqlite")
     if db is None:
         sys.exit(1)
 
