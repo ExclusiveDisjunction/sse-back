@@ -2,121 +2,146 @@
 Provides data structures for graphs, specifically path finding.
 """
 
-from math import sqrt
-import heapq
+import json
 from typing import Optional
+import numpy as np
 
-from nodes import GraphNode, GraphEdge
+from nodes import DBNode
+
+class DijkstraResult:
+    """Represents a specific shortest path between two nodes"""
+    def __init__(self, points: list[int], dist: float):
+        self.__points = points
+        self.__dist = dist
+
+    @property
+    def points(self) -> list[int]:
+        """Retrieves the shortest path"""
+        return self.__points
+
+    @property
+    def dist(self) -> float:
+        """Retrieves the total distance"""
+        return self.__dist
+
+    @staticmethod
+    def from_dict(values: dict) -> Optional["DijkstraResult"]:
+        """Attempts to convert a dictionary into a specific class instance"""
+        try:
+            points = values["points"]
+            dist = values["dist"]
+        except KeyError:
+            return None
+
+        return DijkstraResult(points, dist)
+
+    def __lt__(self, other):
+        return self.dist < other.dist
+    def __eq__(self, other):
+        return self.dist == other.dist
+    def __repr__(self):
+        return f"{self.dist} for points {self.points}"
+
+class TableEntry:
+    """Represents a specific result of the Dijkstra's table."""
+    def __init__(self, n_id: int, data: DijkstraResult):
+        self.__n_id = n_id
+        self.__data = data
+
+    @property
+    def n_id(self) -> int:
+        """Gets the destination node's ID"""
+        return self.__n_id
+
+    @property
+    def data(self) -> DijkstraResult:
+        """Gets the result of the Dijkstra's table"""
+        return self.__data
+
+    @staticmethod
+    def from_list(val: list) -> "TableEntry":
+        n_id = val[0]
+        result = DijkstraResult.from_dict(val[1])
+
+        return TableEntry(n_id, result)
 
 class Graph:
     """
     A central graph data structure used for least path finding.
     """
-    def __init__(self, nodes: dict[int: GraphNode], edges: list[GraphEdge]):
+    def __init__(self, nodes: dict[int: DBNode], path: str):
         self.nodes = nodes
-        self.edges = edges
 
-        self.__compute_distances()
-        self.__fill_edges()
+        self.__load_json(path)
+        self.__fill_groups(nodes)
 
-    def shortest_path(self, source: int, dest: int) -> tuple[list[int], float] | None:
-        """
-        Computes the shortest distance between `source` and `dest` using Dijkstra's algorithm.
-        This returns the path taken, as well as the distance. 
-        If an error occurs, this returns `None`.
-        """
-        if source == dest:
-            return (0, [])
+    def __fill_groups(self, nodes: dict[int: DBNode]):
+        """Fills in an internal table used for quick group lookup"""
+        self.groups: dict[str: list[int]] = {}
+        for n_id, node in nodes.items():
+            old_list = self.groups.get(node.attr.group, [])
+            old_list.append(n_id)
+            self.groups[node.attr.group] = old_list
 
-        # Dist is the distances table, pred is who came before,
-        # and visited is used to ensure that the same node is not viewed twice.
-        dist: dict[int, float] = {node_id: float('inf') for node_id in self.nodes}
-        pred: dict[int, Optional[int]] = {node_id: None for node_id in self.nodes}
-        visited: dict[int, bool] = {node_id: False for node_id in self.nodes}
+    def __load_json(self, path: str):
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
 
-        # Kick start with source
-        dist[source] = 0
+            self.rows = len(data)
+            self.cols = len(data[0]) if self.rows != 0 else 0
 
-        # Optimal Dijkstra's uses a hash map.
-        # The heapq library provides this functionality.
-        # The tuple's first element is the current distance, the int is the NodeID.
-        pq: list[tuple[float, int]] = []
-        heapq.heappush(pq, (0, source))
+            self.table = np.full((self.rows, self.cols), None, dtype=object)
+            for i, row in enumerate(data):
+                for j, col in enumerate(row):
+                    if col is not None:
+                        self.table[i, j] = TableEntry.from_list(col)
 
-        while len(pq) != 0:
-            # Get the least distance node
-            (_, u) = heapq.heappop(pq)
+            self.col_map: dict[int: int] = {}
+            if self.rows != 0:
+                for (i, col) in enumerate(self.table[0]):
+                    if col is not None:
+                        self.col_map[col.n_id] = col
 
-            if u == dest:
-                # We finished! Yay
-                return (dist.get(u, 0), self.__path_reconstruct(source, dest, pred))
+            print(self.table.shape)
 
-            if visited.get(u, False):
-                continue
-
-            visited[u] = True
-
-            for edge in self.edges:
-                # Only care about nodes that have a start of our current node, optimzation
-                if edge.start != u:
-                    continue
-
-                v = edge.dest
-                weight = edge.weight
-
-                if visited[v]:
-                    continue
-
-                # Update distances
-                if dist[u] != float('inf') and dist[u] + weight < dist[v]:
-                    dist[v] = dist[u] + weight
-                    pred[v] = u
-                    heapq.heappush(pq, (dist[v], v))
-
-        return None
-
-    def __path_reconstruct(self, src: int, dest: int, pred: dict[int: int]) -> list[int] | None:
-        """
-        Computes the path taken between `src` and `dest`. 
-        """
-        path = []
-        v = dest
-        # Follow the path in reverse, and then reverse it.
-        while v != src and v is not None:
-            path.append(v)
-            v = pred.get(v, None)
-
-        if v is None:
+    def shortest_node_path(self, source: int, dest: int) -> Optional[TableEntry]:
+        try:
+            t_dest = self.col_map[dest]
+        except KeyError:
             return None
 
-        path.append(src)
-        path.reverse()
-        return path
+        if source >= self.rows or t_dest >= self.cols:
+            return None
 
-    def __fill_edges(self):
-        """
-        Since the graph is initially directed, 
-        we call `GraphEdge.reverse()` to make the graph undirected.
-        """
-        new_edges = []
-        for edge in self.edges:
-            new_edges.append(edge)
-            new_edges.append(edge.reverse())
+        return self.table[source, t_dest]
 
-        self.edges = new_edges
-
-    def __compute_distances(self):
-        """
-        Computes the distances between all nodes, using their connections. 
-        Stores these in the `GraphEdge.weight`.
-        """
+    def shortest_group_path(self, source: int, dest: str) -> Optional[TableEntry]:
         try:
-            for edge in self.edges:
-                source = self.nodes[edge.src]
-                dest = self.nodes[edge.dest]
+            group_ids = self.groups[dest]
 
-                dist = sqrt(pow(source.x - dest.x, 2) + pow(source.y - dest.y, 2))
-                edge.weight = dist
+            t_node_ids = []
+            for node_id in group_ids:
+                mapped = self.col_map[node_id]
+                if mapped > self.cols:
+                    continue
 
-        except KeyError as e:
-            raise e
+                t_node_ids.append(self.col_map[node_id])
+        except KeyError:
+            return None
+
+        if source > self.rows:
+            return None
+
+        min_entry: Optional[TableEntry] = None
+        for dest_node in t_node_ids:
+            result = self.shortest_node_path(source, dest_node)
+            if result is None:
+                continue
+
+            if min_entry is None:
+                min_entry = result
+            else:
+                if result.data.dist < min_entry.data.dist:
+                    min_entry = result
+
+        return min_entry
