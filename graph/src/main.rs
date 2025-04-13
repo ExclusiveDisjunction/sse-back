@@ -126,6 +126,8 @@ struct CommandArguments {
     db_path: String,
     #[arg(help="The create tables script")]
     create_path: String,
+    #[arg(help="The output path")]
+    output: String,
     #[arg(short, long, default_value_t = false)]
     distances: bool
 }
@@ -252,8 +254,8 @@ fn map_sql_error(x: sqlite::Error) -> std::io::Error {
     std::io::Error::new(std::io::ErrorKind::InvalidData, x)
 }
 
-fn process_nodes(nodes: &[CSVNode], edges: Vec<CSVEdge>) -> Result<(), std::io::Error> {
-    let mut result_file = File::create("./dijkstra-result.json")?;
+fn process_nodes(nodes: &[CSVNode], edges: Vec<CSVEdge>, path: String) -> Result<(), std::io::Error> {
+    let mut result_file = File::create(path)?;
 
     let result_matrix = compute_all_distances(nodes, edges)?;
 
@@ -319,7 +321,7 @@ fn run(args: CommandArguments) -> Result<(), std::io::Error> {
 
     if args.distances {
         println!("Begining distance computing");
-        process_nodes(&nodes, edges)?;
+        process_nodes(&nodes, edges, args.output)?;
 
         println!("Distance computing complete.");
     }
@@ -332,6 +334,8 @@ fn run(args: CommandArguments) -> Result<(), std::io::Error> {
         eprintln!("Database error '{e}'");
         return Err(map_sql_error(e))
     }
+
+    println!("All tasks are complete.");
 
     Ok( () )
 }
