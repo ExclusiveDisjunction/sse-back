@@ -15,20 +15,25 @@ from flask import Flask, jsonify, request
 import jwt
 import bcrypt
 
-from src.usr import create_user_dict, SignInRequest
-from src.usr import SignInResponse, UserSessions, User, CreateUserRequest
-from src.nodes import NetworkNode, get_db_nodes, get_db_node_tags
-from src.nodes import get_db_edges, strip_nodes, zip_nodes_and_tags
-from src.graph import Graph
-from src.db import open_db
+from usr import create_user_dict, SignInRequest
+from usr import SignInResponse, UserSessions, User, CreateUserRequest
+from nodes import NetworkNode, get_db_nodes, get_db_node_tags
+from nodes import zip_nodes_and_tags
+from graph import Graph
+from db import open_db
 
+# Who is signed in 
 active_users = UserSessions()
-# db: sqlite3.Connection = None
+# The graph data structure used for lookups
 graph: Graph
+# All nodes to send to the client
 nodes: dict[int: NetworkNode] = {}
+# All users known to the server (username -> User)
 all_users: dict[str: User] = {}
+# All new users created this session, that will be added to the database.
 new_users: list[User] = []
 
+# ssshhhhh
 SECRET_KEY = "jwt-encryption"
 
 app = Flask(__name__)
@@ -53,7 +58,9 @@ def generate_token(user: User) -> str:
     """
     payload = {
         "sub": user.username,
+        # We dont truly have a 'name' parameter.
         "name": ''.join(random.choices(string.ascii_uppercase + string.digits, k=10)),
+        # We want it to last for 2 hours
         "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=2)
     }
 
@@ -86,6 +93,7 @@ def login_request():
     if decoded is None:
         return jsonify(SignInResponse(False, "Unable to decode request", None).to_dict()), 400
 
+    # First, we lookup the user
     try:
         found: Optional[User] = all_users[decoded.username]
     except KeyError:
@@ -100,9 +108,11 @@ def login_request():
             ).to_dict()
         ), 401
 
+    # Only one session per user. 
     if active_users.user_signed_in(found) is not None:
         return jsonify(SignInResponse(False, "The user is already signed in.", None).to_dict()), 409
 
+    # Compare the passwords, using the user's salt.
     salt = found.salt
     password = decoded.password.encode()
     hashed_password = bcrypt.hashpw(password, salt)
@@ -116,6 +126,7 @@ def login_request():
             ).to_dict()
         ), 401
 
+    # Success! Generate the token and send it back to the front.
     token = generate_token(found)
     active_users.auth_user(token, found)
 
@@ -132,6 +143,7 @@ def create_account_request():
     if decoded is None:
         return jsonify(SignInResponse(False, "Unable to decode request", None).to_dict()), 400
 
+    # We lookup this new username to see if it already exists. We do not want it to.
     try:
         found = all_users[decoded.username]
     except KeyError:
@@ -146,13 +158,16 @@ def create_account_request():
             ).to_dict()
         ), 409
 
+    # Since this is a new user, we make a new salt, and store it with the user.
     salt = bcrypt.gensalt()
     password = bcrypt.hashpw(decoded.password, salt)
     db_user = User(0, decoded.username, password, salt)
 
+    # Notate the user so that it can be used later on
     all_users[db_user.username] = db_user
-    new_users.append(db_user)
+    new_users.append(db_user) # Register it for saving
 
+    # Lastly, generate the token and send it back.
     token = generate_token(db_user)
     active_users.auth_user(token, db_user)
 
@@ -188,7 +203,10 @@ def sign_out():
     ret_jwt = token["token"]
 
     if ret_jwt in active_users.users:
-        active_users.users.remove(ret_jwt)
+        try:
+            active_users.users.pop(ret_jwt)
+        except KeyError:
+            print(f"Attempted to remove jwt '{ret_jwt}' from system, but it was not found.")
 
 @app.route("/map-nodes", methods = ["GET"])
 def get_map_nodes():
@@ -239,24 +257,27 @@ if __name__ == "__main__":
         print("Unable to open database. Exiting")
         sys.exit(1)
 
+    # load up all DB information
     cursor = db.cursor()
     db_nodes = get_db_nodes(cursor)
     db_tags = get_db_node_tags(cursor)
     db_users = User.get_all_users(cursor)
 
+    # Map users
     all_users = create_user_dict(db_users)
 
     if db_nodes is None or db_tags is None:
         print("Unable to get database information. Exiting")
         sys.exit(2)
 
+    # load graph data
     graph = Graph(db_nodes, "dijkstra.json")
     nodes = zip_nodes_and_tags(db_nodes, db_tags)
 
     app.run(debug = True)
 
+    # now that the app has finished, we can insert all new users.
     for new_user in new_users:
         new_user.insert_db(cursor)
 
     db.commit()
-    # app.run(debug = True, ssl_context = ('server.crt', 'server.key'))

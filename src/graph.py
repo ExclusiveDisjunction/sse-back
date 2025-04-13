@@ -8,7 +8,7 @@ import numpy as np
 
 from nodes import DBNode
 
-class DijkstraResult:
+class ShortestPath:
     """Represents a specific shortest path between two nodes"""
     def __init__(self, points: list[int], dist: float):
         self.__points = points
@@ -25,7 +25,7 @@ class DijkstraResult:
         return self.__dist
 
     @staticmethod
-    def from_dict(values: dict) -> Optional["DijkstraResult"]:
+    def from_dict(values: dict) -> Optional["ShortestPath"]:
         """Attempts to convert a dictionary into a specific class instance"""
         try:
             points = values["points"]
@@ -33,7 +33,7 @@ class DijkstraResult:
         except KeyError:
             return None
 
-        return DijkstraResult(points, dist)
+        return ShortestPath(points, dist)
 
     def __lt__(self, other):
         return self.dist < other.dist
@@ -44,7 +44,7 @@ class DijkstraResult:
 
 class TableEntry:
     """Represents a specific result of the Dijkstra's table."""
-    def __init__(self, n_id: int, data: DijkstraResult):
+    def __init__(self, n_id: int, data: ShortestPath):
         self.__n_id = n_id
         self.__data = data
 
@@ -54,14 +54,15 @@ class TableEntry:
         return self.__n_id
 
     @property
-    def data(self) -> DijkstraResult:
+    def data(self) -> ShortestPath:
         """Gets the result of the Dijkstra's table"""
         return self.__data
 
     @staticmethod
     def from_list(val: list) -> "TableEntry":
+        """Attempts to convert the list into an instance of TableEntry."""
         n_id = val[0]
-        result = DijkstraResult.from_dict(val[1])
+        result = ShortestPath.from_dict(val[1])
 
         return TableEntry(n_id, result)
 
@@ -84,6 +85,7 @@ class Graph:
             self.groups[node.attr.group] = old_list
 
     def __load_json(self, path: str):
+        """Using the JSON cache created, convert the JSON into a shortest distances table."""
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
@@ -105,20 +107,26 @@ class Graph:
             print(self.table.shape)
 
     def shortest_node_path(self, source: int, dest: int) -> Optional[TableEntry]:
+        """Determines the shortest path between the `source` and `dest`, if one exists."""
         try:
+            # Convert from the destination to the column index.
             t_dest = self.col_map[dest]
         except KeyError:
             return None
 
+        # Out of bounds
         if source >= self.rows or t_dest >= self.cols:
             return None
 
         return self.table[source, t_dest]
 
     def shortest_group_path(self, source: int, dest: str) -> Optional[TableEntry]:
+        """Determines the path between the `source`, and the closest node in the group `dest`."""
         try:
+            # First, we need to get all nodes out of that group.
             group_ids = self.groups[dest]
 
+            # Then we convert these node ids to column indexes
             t_node_ids = []
             for node_id in group_ids:
                 mapped = self.col_map[node_id]
@@ -129,9 +137,11 @@ class Graph:
         except KeyError:
             return None
 
+        # out of bounds
         if source > self.rows:
             return None
 
+        # Determines the closest node out of this table.
         min_entry: Optional[TableEntry] = None
         for dest_node in t_node_ids:
             result = self.shortest_node_path(source, dest_node)

@@ -3,59 +3,39 @@ Includes network and database classes that work with Nodes.
 """
 
 import sqlite3
-from typing import Self
-
-class GraphNode:
-    """
-    Represents a specific location on the map.
-    """
-    def __init__(self, x:float, y: float):
-        self.x = x
-        self.y = y
-
-    def __str__(self):
-        return f"({self.x}, {self.y})"
-
-    def __eq__(self, other):
-        return self.x == other.x and self.y == other.y
-
-class GraphEdge:
-    """
-    Represents a connection between two different nodes, via their ID.
-    """
-    def __init__(self, src: int, dest: int, weight: float = 0):
-        self.src = src
-        self.dest = dest
-        self.weight = weight
-
-    def __str__(self):
-        return f"{self.src} -({self.weight})-> {self.dest}"
-
-    def __eq__(self, other):
-        return self.src == other.src and self.dest == other.dest and self.weight == other.weight
-
-    def reverse(self) -> Self:
-        """
-        Returns the same edge, with the same weight, but swaps the `src` and `dest`.
-        """
-        return GraphEdge(self.dest, self.src, self.weight)
 
 class NodeAttributes:
     """
     Represents information about a specific node.
     """
     def __init__(self, name: str, group: str | None, is_path: bool):
-        self.name = name
-        self.group = group
-        self.is_path = is_path
+        self.__name = name
+        self.__group = group
+        self.__is_path = is_path
+
+    @property
+    def name(self) -> str:
+        """The name of the node"""
+        return self.__name
+    
+    @property
+    def group(self) -> str | None:
+        """The group of the node"""
+        return self.__group
+    
+    @property
+    def is_path(self) -> bool:
+        """When `True`, this node is a path, when `False`, it is a location."""
+        return self.__is_path
 
 class DBNode:
     """
     A database representation of a node. 
     """
-    def __init__(self, n_id: int, loc: GraphNode, attr: NodeAttributes):
+    def __init__(self, n_id: int, x: float, y: float, attr: NodeAttributes):
         self.n_id = n_id
-        self.loc = loc
+        self.x = x
+        self.y = y
         self.attr = attr
 
     def __sql_pack(self, include_id: bool) -> tuple:
@@ -65,16 +45,16 @@ class DBNode:
         if include_id:
             return (
                 self.n_id,
-                self.loc.x,
-                self.loc.y,
+                self.x,
+                self.y,
                 self.attr.name,
                 self.attr.group,
                 1 if self.attr.is_path else 0
             )
 
         return (
-            self.loc.x,
-            self.loc.y,
+            self.x,
+            self.y,
             self.attr.name,
             self.attr.group,
             1 if self.attr.is_path else 0
@@ -129,15 +109,26 @@ class NodeTags:
     Simple information added onto a node for UI filtering. 
     """
     def __init__(self, n_id: int, tags: list[str]):
-        self.n_id = n_id
-        self.inner = tags
+        self.__n_id = n_id
+        self.__inner = tags
+
+    @property
+    def n_id(self) -> int:
+        """The bound node that this tag is for"""
+        return self.__n_id
+
+    @property
+    def values(self) -> list[str]:
+        """The associated tags for this node"""
+        return self.__inner
 
 class NetworkNode:
     """
     Represents a network ready, JSON serializable node with extra information.
     """
-    def __init__(self, loc: GraphNode, attr: NodeAttributes, tags: NodeTags):
-        self.loc = loc
+    def __init__(self, x: float, y: float, attr: NodeAttributes, tags: NodeTags):
+        self.x = x
+        self.y = y
         self.attr = attr
         self.tags = tags
 
@@ -146,8 +137,8 @@ class NetworkNode:
         Converts the node into a `dict` for JSON serialization.
         """
         return {
-            "x": self.loc.x, # float
-            "y": self.loc.y, # float
+            "x": self.x, # float
+            "y": self.y, # float
             "name": self.attr.name, # str
             "group": self.attr.group, # str?
             "is_path": self.attr.is_path, # bool
@@ -165,43 +156,17 @@ def get_db_nodes(cur: sqlite3.Cursor) -> dict[int: DBNode] | None:
 
     result = {}
     for val in vals:
-        result[val[0]] = DBNode(
-            val[0],
-            GraphNode(
-                val[1],
-                val[2]
-            ),
+        n_id, x, y, name, group, is_path = val
+        result[n_id] = DBNode(
+            n_id,
+            x,
+            y,
             NodeAttributes(
-                val[3],
-                val[4],
-                val[5] == 1
+                name,
+                group,
+                is_path == 1
             )
         )
-
-    return result
-
-def strip_nodes(vals: dict[int, DBNode]) -> dict[int: GraphNode]:
-    """
-    Takes only the location data out of `DBNode`, making it ready for graph storage.
-    """
-    result = {}
-    for (key, val) in vals.items():
-        result[key] = val.loc
-
-    return result
-
-def get_db_edges(cur: sqlite3.Cursor) -> list[GraphEdge] | None:
-    """
-    Gets all node connections from the database.
-    """
-    result = cur.execute("SELECT SOURCE, DESTINATION FROM EDGES")
-    vals = result.fetchall()
-    if vals is None:
-        return None
-
-    result = []
-    for val in vals:
-        result.append(GraphEdge(val[0], val[1]))
 
     return result
 
@@ -231,14 +196,14 @@ def zip_nodes_and_tags(
     """
     result: dict[int: NetworkNode] = {}
     for (n_id, node) in nodes.items():
-        result[n_id] = NetworkNode(node.loc, node.attr, NodeTags(n_id, []))
+        result[n_id] = NetworkNode(node.x, node.y, node.attr, NodeTags(n_id, []))
 
     for (n_id, tag) in tags.items():
         if n_id not in result:
             raise ValueError(
-                f"The node id referenced by tag '{tag}', id: '{n_id}' was not found in the nodes."
+                f"The node id referenced by (tag '{tag}', id: '{n_id}') was not found in the nodes."
             )
 
-        result[n_id].tags.inner.append(tag)
+        result[n_id].tags.values.append(tag)
 
     return result
