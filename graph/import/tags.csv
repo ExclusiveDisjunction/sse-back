@@ -1,0 +1,69 @@
+n_id,tag
+31,Kitchens
+31,Bookstore
+31,Dormitories
+31,Vending Machines
+31,Study Rooms
+31,Bathrooms
+41,Dining Hall
+41,SGA
+41,Auxiliary Services
+41,NEST
+41,Fire & Ash
+41,Einsteins
+41,Student Business Services
+41,Student Health Clinic
+41,Bathroom
+63,Bathrooms
+63,Basketball
+63,Volleyball
+63,Pickleball
+63,Soccer
+63,Vending Machines
+63,Weightlifting
+63,E-Sports
+63,Pool
+63,Cycling
+63,Rock Climbing
+88,Bathrooms
+88,Pool Game
+88,Ping Pong
+88,Kitchens
+88,Dormitories
+88,Dorm Package Pickup
+88,Vending Machines
+88,Study Rooms
+94,Study Rooms
+94,Kitchens
+94,Dormitories
+94,Vending Machines
+94,Pool Game
+94,Ping Pong
+94,Bathrooms
+107,Admissions
+107,Bathrooms
+132,Bathrooms
+132,Classrooms
+132,AM Department
+132,ECE Department
+132,LA Department
+132,Registrar
+132,Library
+132,Vending Machines
+132,Mosaics
+146,ME Department
+146,CS Department
+146,EE Department
+146,EP Department
+146,CE Department
+146,Research
+146,Captsone Lab
+146,Vending Machines
+146,Classrooms
+146,Bathrooms
+155,Shuttle Bus
+226,Parking
+226,School Entrance
+226,School Exits
+258,Private Research
+262,In Construction

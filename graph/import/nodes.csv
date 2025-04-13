@@ -1,0 +1,299 @@
+n_id,x,y,name,group,is_path
+0,570,326,IST South Entrance,IST,0
+1,586,313,,Path,1
+2,642,303,,Path,1
+3,664,275,,Path,1
+4,690,246,,Path,1
+5,702,236,,Path,1
+6,709,267,,Path,1
+7,721,256,Phase 1 North Entrance,Phase 1,0
+8,723,283,,Path,1
+9,752,252,,Path,1
+10,758,242,Phase 1 Main Entrance West,Phase 1,0
+11,824,292,,Path,1
+12,849,270,,Path,1
+13,838,262,,Path,1
+14,829,271,Phase 1 South Entrance,Phase 1,0
+15,867,284,,Path,1
+16,862,289,Phase 2 North East Entrance,Phase 2,0
+17,836,301,,Path,1
+18,842,297,Phase 2 North West Entrance,Phase 2,0
+19,870,331,,Path,1
+20,883,346,,Path,1
+21,890,341,Phase 2 Main Entrance West,Phase 2,0
+22,849,342,,Path,1
+23,820,338,,Path,1
+24,742,262,,Path,1
+25,759,279,Phase 3 North East Entrance,Phase 3,0
+26,796,312,,Path,1
+27,783,317,Phase 3 North Center Entrance,Phase 3,0
+28,787,321,Phase 3 South Center Entrance,Phase 3,0
+29,829,340,,Path,1
+30,828,346,,Path,1
+31,843,362,Phase 3 Main East Entrance,Phase 3,0
+32,827,380,Phase 3 Main West Entrance,Phase 3,0
+33,870,391,Phase 3 South East Entrance,Phase 3,0
+34,858,379,,Path,1
+35,887,352,,Path,1
+36,886,408,,Path,1
+37,900,396,,Path,1
+38,888,386,Phase 2 South Entrance,Phase 2,0
+39,908,402,,Path,1
+40,924,388,,Path,1
+41,929,393,Nest Entrance,Wellness,0
+42,930,430,Wellness Center Main Entrance,Wellness,0
+43,967,467,,Path,1
+44,990,488,,Path,1
+45,1037,478,,Path,1
+46,1076,495,,Path,1
+47,1081,510,,Path,1
+48,1065,530,,Path,1
+49,1076,554,,Path,1
+50,1093,551,,Path,1
+51,1089,575,SDC Main Entrance,SDC,0
+52,1084,561,,Path,1
+53,1093,561,,Path,1
+54,1093,569,,Path,1
+55,1084,569,,Path,1
+56,1068,567,,Path,1
+57,1049,561,,Path,1
+58,985,568,,Path,1
+59,1028,564,,Path,1
+60,1039,618,,Path,1
+61,1053,617,,Path,1
+62,1093,663,Soccer Field,SDC,0
+63,1098,659,Basketball Court,SDC,0
+64,1116,689,Volleyball Court,SDC,0
+65,1131,706,,Path,1
+66,1148,704,,Path,1
+67,1091,596,SDC Pool,SDC,0
+68,992,888,,Path,1
+69,1050,844,,Path,1
+70,1093,799,,Path,1
+71,1077,782,Outdoor Fitness,SDC,0
+72,1032,543,,Path,1
+73,1001,541,,Path,1
+74,974,509,,Path,1
+75,973,495,,Path,1
+76,1136,620,,Path,1
+77,1123,564,,Path,1
+78,1109,525,,Path,1
+79,1082,463,,Path,1
+80,1042,395,,Path,1
+81,992,328,,Path,1
+82,952,361,,Path,1
+83,938,346,,Path,1
+84,975,310,,Path,1
+85,929,266,,Path,1
+86,896,306,,Path,1
+87,910,319,,Path,1
+88,905,326,Phase 2 Main Entrance East,Phase 2,0
+89,879,227,,Path,1
+90,825,193,,Path,1
+91,800,239,,Path,1
+92,770,224,,Path,1
+93,762,220,,Path,1
+94,760,234,Phase 1 Main Entrance East,Phase 1,0
+95,786,173,,Path,1
+96,749,206,,Path,1
+97,744,212,,Path,1
+98,725,202,,Path,1
+99,763,163,,Path,1
+100,737,192,,Path,1
+101,742,199,,Path,1
+102,734,207,,Path,1
+103,995,292,,Path,1
+104,1013,310,,Path,1
+105,1022,297,,Path,1
+106,1041,293,,Path,1
+107,1048,321,Admissions Center,Admissions,0
+108,860,432,,Path,1
+109,770,334,,Path,1
+110,750,358,,Path,1
+111,717,388,,Path,1
+112,692,419,,Path,1
+113,662,448,,Path,1
+114,618,479,,Path,1
+115,592,456,,Path,1
+116,577,445,,Path,1
+117,542,396,,Path,1
+118,553,344,,Path,1
+119,624,242,,Path,1
+120,650,128,,Path,1
+121,706,142,,Path,1
+122,610,214,,Path,1
+123,583,182,,Path,1
+124,545,152,,Path,1
+125,507,135,,Path,1
+126,617,121,,Path,1
+127,564,120,,Path,1
+128,487,145,IST North Shuttle Bus,Shuttle Bus,0
+129,478,153,,Path,1
+130,470,188,,Path,1
+131,456,192,,Path,1
+132,451,199,IST North Entrance,IST,0
+133,444,205,,Path,1
+134,440,216,,Path,1
+135,404,222,,Path,1
+136,410,208,,Path,1
+137,437,179,,Path,1
+138,468,155,,Path,1
+139,395,226,,Path,1
+140,385,249,,Path,1
+141,372,282,,Path,1
+142,362,329,,Path,1
+143,363,378,Parking Lot 2,Transportation,0
+144,365,390,,Path,1
+145,479,373,,Path,1
+146,490,395,BARC Main Entrance,BARC,0
+147,496,383,,Path,1
+148,505,418,,Path,1
+149,480,441,,Path,1
+150,445,452,BARC South Entrance,BARC,0
+151,455,462,,Path,1
+152,397,282,,Path,1
+153,418,318,,Path,1
+154,442,345,,Path,1
+155,1004,343,Dorm Shuttle Bus,Shuttle Bus,0
+156,949,335,Parking Lot 3 South,Transportation,0
+157,758,199,Parking Lot 3 North,Transportation,0
+158,640,125,Parking Lot 1,Transportation,0
+159,378,459,,Path,1
+160,391,507,,Path,1
+161,431,471,,Path,1
+162,420,481,,Path,1
+163,425,504,Parking Lot 4 North,Transportation,0
+164,434,496,,Path,1
+165,440,492,,Path,1
+166,435,480,,Path,1
+167,427,489,Parking Lot 4 Shuttle Bus,Shuttle Bus,0
+168,398,528,,Path,1
+169,414,571,,Path,1
+170,462,550,,Path,1
+171,489,602,,Path,1
+172,443,628,,Path,1
+173,521,651,,Path,1
+174,479,681,,Path,1
+175,518,732,,Path,1
+176,545,707,Parking Lot 4 South,Transportation,0
+177,556,698,,Path,1
+178,562,705,,Path,1
+179,568,712,,Path,1
+180,531,747,,Path,1
+181,558,722,Parking Lot 6 North,Transportation,0
+182,580,793,,Path,1
+183,613,754,,Path,1
+184,630,833,,Path,1
+185,659,791,,Path,1
+186,684,867,,Path,1
+187,708,822,,Path,1
+188,774,851,,Path,1
+189,729,890,,Path,1
+190,760,863,Parking Lot 6 South,Transportation,0
+191,767,865,Parking Lot 6 Shuttle Bus,Shuttle Bus,0
+192,782,871,Parking Lot 8,Transportation,0
+193,768,884,,Path,1
+194,758,902,,Path,1
+195,819,922,,Path,1
+196,833,873,,Path,1
+197,841,868,,Path,1
+198,849,869,,Path,1
+199,853,877,,Path,1
+200,877,882,,Path,1
+201,893,901,Overflow Parking,Transportation,0
+202,879,767,,Path,1
+203,793,861,,Path,1
+204,748,927,,Path,1
+205,739,927,,Path,1
+206,727,975,Parking Entrance,Transportation,0
+207,694,967,Parking Exit,Transportation,0
+208,702,936,,Path,1
+209,713,909,,Path,1
+210,851,930,,Path,1
+211,1144,986,,Path,1
+212,1154,986,,Path,1
+213,1174,967,,Path,1
+214,1174,958,,Path,1
+215,1201,956,,Path,1
+216,1203,967,,Path,1
+217,1219,975,,Path,1
+218,1229,986,,Path,1
+219,1234,1006,,Path,1
+220,1231,1024,,Path,1
+221,1218,1042,,Path,1
+222,1189,1053,,Path,1
+223,1154,1103,Roundabout Entrance,Transportation,0
+224,1153,1111,,Path,1
+225,1117,1087,Roundabout Exit,Transportation,0
+226,827,997,Free Parking East,Transportation,0
+227,521,939,Free Parking West,Transportation,0
+228,983,1034,,Path,1
+229,1053,1056,,Path,1
+230,1140,1014,,Path,1
+231,1150,1018,,Path,1
+232,1154,1029,,Path,1
+233,1151,1036,,Path,1
+234,963,856,,Path,1
+235,929,821,,Path,1
+236,912,795,,Path,1
+237,896,779,,Path,1
+238,910,747,,Path,1
+239,942,719,,Path,1
+240,979,675,,Path,1
+241,1024,723,,Path,1
+242,1044,750,,Path,1
+243,1062,766,,Path,1
+244,980,621,,Path,1
+245,957,644,,Path,1
+246,892,579,,Path,1
+247,926,564,,Path,1
+248,868,611,,Path,1
+249,818,655,,Path,1
+250,791,671,,Path,1
+251,829,713,,Path,1
+252,844,737,,Path,1
+253,770,664,,Path,1
+254,737,633,,Path,1
+255,726,601,,Path,1
+256,706,574,,Path,1
+257,650,626,,Path,1
+258,584,727,Citrus Innovation Center,Citrus,0
+259,560,528,,Path,1
+260,535,551,,Path,1
+261,521,573,,Path,1
+262,501,463,Wendt Engineering Building,W.E.B,0
+263,685,559,,Path,1
+264,658,518,,Path,1
+265,736,555,,Path,1
+266,782,513,,Path,1
+267,803,484,,Path,1
+268,816,501,,Path,1
+269,845,519,,Path,1
+270,858,532,,Path,1
+271,868,548,,Path,1
+272,876,562,,Path,1
+273,819,389,,Path,1
+274,945,354,,Path,1
+275,789,459,,Path,1
+276,782,442,,Path,1
+277,778,432,,Path,1
+278,769,424,,Path,1
+279,742,410,,Path,1
+280,697,363,,Path,1
+281,685,342,,Path,1
+282,1106,550,Parking Lot 5 South,Transportation,0
+283,977,338,Parking Lot 5 North,Transportation,0
+284,497,204,,Path,1
+285,524,220,,Path,1
+286,546,240,,Path,1
+287,562,265,,Path,1
+288,575,299,,Path,1
+289,576,309,,Path,1
+290,572,314,,Path,1
+291,561,328,,Path,1
+292,553,331,,Path,1
+293,525,321,,Path,1
+294,501,308,,Path,1
+295,480,286,,Path,1
+296,462,262,,Path,1
+297,451,234,,Path,1

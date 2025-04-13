@@ -209,8 +209,9 @@ def fetch_nodes_to_traverse():
     """
 
     get_jwt = request.args.get("token", None)
-    source = request.args.get("src", 0, type=int)
-    dest = request.args.get("dest", 0, type=int)
+    source = request.args.get("start", 0, type=int)
+    dest = request.args.get("end", str(), type=str)
+    is_group = request.args.get("is_group", False, type=bool)
 
     if get_jwt is None or source is None or dest is None:
         return jsonify({}), 400

@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+graph/target
+graph/.idea
+graph/.vscode
+
 *.sqlite
 *.DS_Store
 
