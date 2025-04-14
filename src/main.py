@@ -73,10 +73,10 @@ def is_token_valid(token: str) -> bool:
     """
     try:
         _ = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        target_user = active_users.get_auth(token)
-        if target_user is None:
-            print("The user is not signed in.")
-            return False
+        # target_user = active_users.get_auth(token)
+        # if target_user is None:
+        #     print("The user is not signed in.")
+        #     return False
 
         return True
     except jwt.ExpiredSignatureError:
