@@ -106,14 +106,18 @@ class Graph:
 
     def shortest_node_path(self, source: int, dest: int) -> Optional[TableEntry]:
         """Determines the shortest path between the `source` and `dest`, if one exists."""
+        print(self.col_map)
+        print(type(dest))
         try:
             # Convert from the destination to the column index.
             t_dest = self.col_map[dest]
         except KeyError:
+            print(f"Key {dest} not found")
             return None
 
         # Out of bounds
         if source >= self.rows or t_dest >= self.cols:
+            print("out of bounds")
             return None
 
         return self.table[source, t_dest]
@@ -198,6 +202,6 @@ class TraverseRequest:
 
         source = int(source)
         is_group = is_group == "true"
-        dest = int(dest) if is_group else str(dest)
+        dest = int(dest) if not is_group else str(dest)
 
         return TraverseRequest(token, source, dest, is_group)
