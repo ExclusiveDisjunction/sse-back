@@ -22,7 +22,7 @@ from nodes import zip_nodes_and_tags
 from graph import Graph
 from db import open_db
 
-# Who is signed in 
+# Who is signed in
 active_users = UserSessions()
 # The graph data structure used for lookups
 graph: Graph
@@ -73,6 +73,11 @@ def is_token_valid(token: str) -> bool:
     """
     try:
         _ = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+        target_user = active_users.get_auth(token)
+        if target_user is None:
+            print("The user is not signed in.")
+            return False
+
         return True
     except jwt.ExpiredSignatureError:
         print("Token is expired")
@@ -80,6 +85,8 @@ def is_token_valid(token: str) -> bool:
     except jwt.InvalidTokenError as e:
         print(f"The token is invalid '{e}'")
         return False
+    except KeyError:
+        print("The user could not be found.")
 
 @app.route("/login", methods = ["POST"])
 def login_request():
@@ -109,7 +116,7 @@ def login_request():
             ).to_dict()
         ), 401
 
-    # Only one session per user. 
+    # Only one session per user
     if active_users.user_signed_in(found) is not None:
         return jsonify(SignInResponse(False, "The user is already signed in.", None).to_dict()), 409
 

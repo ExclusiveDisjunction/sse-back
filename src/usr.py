@@ -3,7 +3,7 @@ This module handles all user information, including Network and Database classes
 """
 
 import sqlite3
-from typing import Self
+from typing import Self, Optional
 
 class User:
     """ 
@@ -211,7 +211,7 @@ class UserSessions:
         """
         self.users[jwt] = user
 
-    def get_auth(self, jwt: str) -> User | None:
+    def get_auth(self, jwt: str) -> Optional[User]:
         """
         Retrieves a user's authentication, if stored.
         """
