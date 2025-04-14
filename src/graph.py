@@ -136,7 +136,7 @@ class Graph:
             return None
 
         # out of bounds
-        if source > self.rows:
+        if source >= self.rows:
             return None
 
         # Determines the closest node out of this table.
