@@ -17,12 +17,12 @@ class NodeAttributes:
     def name(self) -> str:
         """The name of the node"""
         return self.__name
-    
+
     @property
     def group(self) -> str | None:
         """The group of the node"""
         return self.__group
-    
+
     @property
     def is_path(self) -> bool:
         """When `True`, this node is a path, when `False`, it is a location."""
@@ -82,7 +82,7 @@ class DBNode:
         try:
             cur.execute(
                 "UPDATE NODES SET X=?, Y=?, NODE_NAME=?, NODE_GROUP=?, IS_PATH=? WHERE N_ID=?", 
-                self.__sql_pack(False) + self.n_id
+                self.__sql_pack(False) + (self.n_id, )
             )
             return True
         except sqlite3.Error as e:
@@ -96,7 +96,7 @@ class DBNode:
         try:
             cur.execute(
                 "DELETE FROM NODES WHERE N_ID=?", 
-                (self.n_id)
+                (self.n_id, )
             )
 
             return True
@@ -180,10 +180,10 @@ def get_db_node_tags(cur: sqlite3.Cursor) -> dict[int: list[str]] | None:
         return None
 
     result: dict[int: list[str]] = {}
-    for val in vals:
-        current_list = result.get(val[0], [])
-        current_list.append(val[1])
-        result[val[0]] = current_list
+    for (n_id, tag) in vals:
+        current_list = result.get(n_id, [])
+        current_list.append(tag)
+        result[n_id] = current_list
 
     return result
 

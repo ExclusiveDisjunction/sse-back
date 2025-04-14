@@ -19,7 +19,7 @@ from usr import create_user_dict, SignInRequest
 from usr import SignInResponse, UserSessions, User, CreateUserRequest
 from nodes import NetworkNode, get_db_nodes, get_db_node_tags
 from nodes import zip_nodes_and_tags
-from graph import Graph
+from graph import Graph, TraverseRequest
 from db import open_db
 
 # Who is signed in
@@ -230,36 +230,24 @@ def get_map_nodes():
         result[n_id] = node.to_dict()
     return jsonify(result), 200
 
-@app.route("/traverse", methods = ["GET"])
+@app.route("/traverse", methods = ["POST"])
 def fetch_nodes_to_traverse():
     """
     Processes a request from the client to go from a source node to a destination one. 
     This requires JWT authentication. 
     """
 
-    #get_jwt = request.args.get("token", "", type=str)
-    source = request.args.get("start", type=str)
-    dest = request.args.get("end", type=str)
-    is_group = request.args.get("is_group", type=str)
-    print(dest)
+    raw_message = request.get_json()
+    message = TraverseRequest.from_dict(raw_message)
+    print(message)
 
-    if source is None or dest is None or is_group is None:
+    if message is None:
         return jsonify({}), 400
 
-    is_group = is_group == "true"
-
-    try:
-        source = int(source)
-        if not is_group:
-            dest = int(dest)
-    except ValueError as e:
-        print(f"unable to parse '{e}'")
-        return jsonify({}), 400
-
-    if not is_group:
-        result = graph.shortest_node_path(source, dest)
+    if not message.is_group:
+        result = graph.shortest_node_path(message.source, message.dest)
     else:
-        result = graph.shortest_group_path(source, dest)
+        result = graph.shortest_group_path(message.source, message.dest)
 
     if result is None:
         return jsonify({}), 404

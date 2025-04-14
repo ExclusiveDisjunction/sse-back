@@ -153,3 +153,51 @@ class Graph:
                     min_entry = result
 
         return min_entry
+
+class TraverseRequest:
+    """Represents a request to lookup shortest path"""
+    def __init__(self, token: str, src: int, dest: str | int, is_group: bool):
+        self.__token = token
+        self.__source = src
+        self.__dest = dest
+        self.__is_group = is_group
+
+    @property
+    def token(self) -> str:
+        """The JWT associated with the request"""
+        return self.__token
+
+    @property
+    def source(self) -> int:
+        """The source node"""
+        return self.__source
+
+    @property
+    def dest(self) -> int | str:
+        """The destination node"""
+        return self.__dest
+
+    @property
+    def is_group(self) -> bool:
+        """If this is false, the destination is an integer, and if this true, `dest` is a string"""
+        return self.__is_group
+
+    @staticmethod
+    def from_dict(data: dict) -> Optional["TraverseRequest"]:
+        """
+        Attempts to extract data from a dictionary to create an instance of this class.
+        If information is missing, this will return None.
+        """
+        try:
+            token = data["token"] # string, JWT
+            source = data["start"] # integer
+            dest = data["end"] # str, number if is_group == "false", group name otherwise
+            is_group = data["is_group"] # str "true" or "false"
+        except KeyError:
+            return None
+
+        source = int(source)
+        is_group = is_group == "true"
+        dest = int(dest) if is_group else str(dest)
+
+        return TraverseRequest(token, source, dest, is_group)
