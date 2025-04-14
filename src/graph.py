@@ -102,9 +102,7 @@ class Graph:
             if self.rows != 0:
                 for (i, col) in enumerate(self.table[0]):
                     if col is not None:
-                        self.col_map[col.n_id] = col
-
-            print(self.table.shape)
+                        self.col_map[col.n_id] = i
 
     def shortest_node_path(self, source: int, dest: int) -> Optional[TableEntry]:
         """Determines the shortest path between the `source` and `dest`, if one exists."""

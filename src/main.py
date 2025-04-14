@@ -48,7 +48,8 @@ CORS(app,
                     "lat",
                     "long",
                     "start",
-                    "end"],
+                    "end",
+                    "is_group"],
      expose_headers=["Content-Type", "Authorization"]
      )
 
@@ -217,7 +218,10 @@ def get_map_nodes():
     if graph is None:
         return jsonify({}), 503
 
-    return jsonify(nodes), 200
+    result: dict[int: dict] = {}
+    for (n_id, node) in nodes.items():
+        result[n_id] = node.to_dict()
+    return jsonify(result), 200
 
 @app.route("/traverse", methods = ["GET"])
 def fetch_nodes_to_traverse():
@@ -226,19 +230,26 @@ def fetch_nodes_to_traverse():
     This requires JWT authentication. 
     """
 
-    get_jwt = request.args.get("token", None)
-    source = request.args.get("start", 0, type=int)
-    dest = request.args.get("end", str(), type=str)
-    is_group = request.args.get("is_group", False, type=bool)
+    #get_jwt = request.args.get("token", "", type=str)
+    source = request.args.get("start", type=str)
+    dest = request.args.get("end", type=str)
+    is_group = request.args.get("is_group", type=str)
+    print(dest)
 
-    if get_jwt is None or source is None or dest is None:
+    if source is None or dest is None or is_group is None:
         return jsonify({}), 400
 
-    if not is_token_valid(get_jwt):
-        return jsonify({}), 401
+    is_group = is_group == "true"
+
+    try:
+        source = int(source)
+        if not is_group:
+            dest = int(dest)
+    except ValueError as e:
+        print(f"unable to parse '{e}'")
+        return jsonify({}), 400
 
     if not is_group:
-        dest = int(dest)
         result = graph.shortest_node_path(source, dest)
     else:
         result = graph.shortest_group_path(source, dest)

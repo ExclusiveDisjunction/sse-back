@@ -55,7 +55,7 @@ class User:
         """
         try:
             cur.execute(
-                "INSERT INTO USERS (F_NAME, L_NAME, USERNAME, PASSWD, SALT) VALUES (?, ?, ?, ?, ?)", 
+                "INSERT INTO USERS (USERNAME, PASSWD, SALT) VALUES (?, ?, ?)",
                 self.sql_pack()
             )
             self.u_id = int(cur.lastrowid)

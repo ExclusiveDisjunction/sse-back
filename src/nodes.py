@@ -142,7 +142,7 @@ class NetworkNode:
             "name": self.attr.name, # str
             "group": self.attr.group, # str?
             "is_path": self.attr.is_path, # bool
-            "tags": self.tags.inner #[str]
+            "tags": self.tags.values #[str]
         }
 
 def get_db_nodes(cur: sqlite3.Cursor) -> dict[int: DBNode] | None:
