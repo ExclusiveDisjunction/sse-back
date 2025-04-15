@@ -201,7 +201,10 @@ class TraverseRequest:
         source = int(source)
         is_group = is_group == "true"
         try:
-            dest = int(dest) if not is_group else str(dest)
+            if is_group:
+                dest = dest
+            else:
+                dest = int(dest)
         except ValueError:
             return None 
 
