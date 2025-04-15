@@ -278,6 +278,7 @@ if __name__ == "__main__":
     # load graph data
     graph = Graph(db_nodes, "dijkstra.json")
     nodes = zip_nodes_and_tags(db_nodes, db_tags)
+    print(nodes[31].to_dict())
 
     app.run(debug = True)
 

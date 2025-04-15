@@ -204,6 +204,7 @@ def zip_nodes_and_tags(
                 f"The node id referenced by (tag '{tag}', id: '{n_id}') was not found in the nodes."
             )
 
-        result[n_id].tags.values.append(tag)
+        print(result[n_id].tags.values)
+        result[n_id].tags.values = tag
 
     return result
