@@ -3,257 +3,19 @@ Stores the initial server interface using FLASK.
 """
 
 import sys
-import datetime
-import random
-import string
-from typing import Optional
 
 # import sqlite3
 
-from flask_cors import CORS
-from flask import Flask, jsonify, request
-import jwt
-import bcrypt
-
-from usr import create_user_dict, SignInRequest
-from usr import SignInResponse, UserSessions, User, CreateUserRequest
+import matplotlib.pyplot as plt
 from nodes import NetworkNode, get_db_nodes, get_db_node_tags
 from nodes import zip_nodes_and_tags
-from graph import Graph, TraverseRequest
+from graph import Graph
 from db import open_db
 
-# Who is signed in
-active_users = UserSessions()
 # The graph data structure used for lookups
 graph: Graph
 # All nodes to send to the client
 nodes: dict[int: NetworkNode] = {}
-# All users known to the server (username -> User)
-all_users: dict[str: User] = {}
-# All new users created this session, that will be added to the database.
-new_users: list[User] = []
-
-# ssshhhhh
-SECRET_KEY = "jwt-encryption"
-
-app = Flask(__name__)
-CORS(app,
-     origins=["http://localhost:4200"],
-     supports_credentials=True,
-     methods=["GET", "POST", "OPTIONS"],
-     allow_headers=["Content-Type",
-                    "Authorization",
-                    "ngrok-skip-browser-warning",
-                    "token",
-                    "lat",
-                    "long",
-                    "start",
-                    "end",
-                    "is_group"],
-     expose_headers=["Content-Type", "Authorization"]
-     )
-
-def generate_token(user: User) -> str:
-    """
-    Generates a JWT token for the passed `User`. 
-    """
-    payload = {
-        "sub": user.username,
-        # We dont truly have a 'name' parameter.
-        "name": ''.join(random.choices(string.ascii_uppercase + string.digits, k=10)),
-        # We want it to last for 2 hours
-        "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=2)
-    }
-
-    return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
-
-def is_token_valid(token: str) -> bool:
-    """ 
-    Attempts to decode a specific JWT, and returns `False` if the token is invalid, or expired.
-    """
-    try:
-        _ = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        # target_user = active_users.get_auth(token)
-        # if target_user is None:
-        #     print("The user is not signed in.")
-        #     return False
-
-        return True
-    except jwt.ExpiredSignatureError:
-        print("Token is expired")
-        return False
-    except jwt.InvalidTokenError as e:
-        print(f"The token is invalid '{e}'")
-        return False
-    except KeyError:
-        print("The user could not be found.")
-
-@app.route("/login", methods = ["POST"])
-def login_request():
-    """
-    Provides the functionality for the login request. 
-    It will decode a `SignInRequest`, and then attempt to lookup the user, 
-    and validate the sign in.
-    """
-
-    msg = request.get_json()
-    decoded: SignInRequest = SignInRequest.from_dict(msg)
-    if decoded is None:
-        return jsonify(SignInResponse(False, "Unable to decode request", None).to_dict()), 400
-
-    # First, we lookup the user
-    try:
-        found: Optional[User] = all_users[decoded.username]
-    except KeyError:
-        found = None
-
-    if found is None:
-        return jsonify(
-            SignInResponse(
-                False,
-                "User credentials could not be found.",
-                None
-            ).to_dict()
-        ), 401
-
-    # Only one session per user
-    if active_users.user_signed_in(found) is not None:
-        return jsonify(SignInResponse(False, "The user is already signed in.", None).to_dict()), 409
-
-    # Compare the passwords, using the user's salt.
-    salt = found.salt
-    password = decoded.password.encode()
-    hashed_password = bcrypt.hashpw(password, salt)
-
-    if not bcrypt.checkpw(found.password, hashed_password):
-        return jsonify(
-            SignInResponse(
-                False,
-                "User credentials did not match.", 
-                None
-            ).to_dict()
-        ), 401
-
-    # Success! Generate the token and send it back to the front.
-    token = generate_token(found)
-    active_users.auth_user(token, found)
-
-    return jsonify(SignInResponse(True, "", token).to_dict()), 200
-
-@app.route("/create-account", methods = ["POST"])
-def create_account_request():
-    """
-    Processes a `CreateUserRequest` to create a user on the server.
-    """
-
-    msg = request.get_json()
-    decoded: CreateUserRequest = CreateUserRequest.from_dict(msg)
-    if decoded is None:
-        return jsonify(SignInResponse(False, "Unable to decode request", None).to_dict()), 400
-
-    # We lookup this new username to see if it already exists. We do not want it to.
-    try:
-        found = all_users[decoded.username]
-    except KeyError:
-        found = None
-
-    if found is not None:
-        return jsonify(
-            SignInResponse(
-                False,
-                "The user is already created with that username",
-                None
-            ).to_dict()
-        ), 409
-
-    # Since this is a new user, we make a new salt, and store it with the user.
-    salt = bcrypt.gensalt()
-    password = bcrypt.hashpw(decoded.password, salt)
-    db_user = User(0, decoded.username, password, salt)
-
-    # Notate the user so that it can be used later on
-    all_users[db_user.username] = db_user
-    new_users.append(db_user) # Register it for saving
-
-    # Lastly, generate the token and send it back.
-    token = generate_token(db_user)
-    active_users.auth_user(token, db_user)
-
-    return jsonify(SignInResponse(True, "", token).to_dict()), 200
-
-@app.route("/validate-token", methods = ["POST"])
-def validate_token():
-    """
-    Validates the JWT provided by the client. 
-    """
-    token = request.get_json()
-    ret_jwt = token["token"]
-
-    if is_token_valid(ret_jwt):
-        return jsonify({
-            "valid": True,
-            "message": ""
-        }), 200
-
-    return jsonify({
-        "valid": False,
-        "message": "Token is expired"
-    }), 200
-
-@app.route("/sign-out", methods = ["POST"])
-def sign_out():
-    """
-    Removes the user's JWT from the server
-    """
-
-    print("got sign out request from user")
-    token = request.get_json()
-    ret_jwt = token["token"]
-
-    if ret_jwt in active_users.users:
-        try:
-            active_users.users.pop(ret_jwt)
-        except KeyError:
-            print(f"Attempted to remove jwt '{ret_jwt}' from system, but it was not found.")
-
-@app.route("/map-nodes", methods = ["GET"])
-def get_map_nodes():
-    """
-    Retrieves the nodes from the internal database, and provides it to the user.
-    """
-
-    if graph is None:
-        return jsonify({}), 503
-
-    result: dict[int: dict] = {}
-    for (n_id, node) in nodes.items():
-        result[n_id] = node.to_dict()
-    return jsonify(result), 200
-
-@app.route("/traverse", methods = ["POST"])
-def fetch_nodes_to_traverse():
-    """
-    Processes a request from the client to go from a source node to a destination one. 
-    This requires JWT authentication. 
-    """
-
-    raw_message = request.get_json()
-    message = TraverseRequest.from_dict(raw_message)
-    print(message)
-
-    if message is None:
-        return jsonify({}), 400
-
-    if not message.is_group:
-        result = graph.shortest_node_path(message.source, message.dest)
-    else:
-        result = graph.shortest_group_path(message.source, message.dest)
-
-    if result is None:
-        return jsonify({}), 404
-
-    result_nodes = result.data.points
-    return jsonify(result_nodes), 200
 
 if __name__ == "__main__":
     print("Starting server...\n")
@@ -267,10 +29,6 @@ if __name__ == "__main__":
     cursor = db.cursor()
     db_nodes = get_db_nodes(cursor)
     db_tags = get_db_node_tags(cursor)
-    db_users = User.get_all_users(cursor)
-
-    # Map users
-    all_users = create_user_dict(db_users)
 
     if db_nodes is None or db_tags is None:
         print("Unable to get database information. Exiting")
@@ -280,10 +38,30 @@ if __name__ == "__main__":
     graph = Graph(db_nodes, "dijkstra.json")
     nodes = zip_nodes_and_tags(db_nodes, db_tags)
 
-    app.run(debug = True)
+    start = int(input("start node? "))
+    end = int(input("end node? "))
 
-    # now that the app has finished, we can insert all new users.
-    for new_user in new_users:
-        new_user.insert_db(cursor)
+    path = graph.shortest_node_path(start, end)
 
-    db.commit()
+    xs = []
+    ys = []
+    c = []
+    for node in db_nodes.values():
+        xs.append(node.x)
+        ys.append(node.y)
+        c.append('b' if node.attr.is_path else 'r')
+
+    if path is not None:
+        print(f"The shortest distance is {path.data.dist}")
+        try:
+            last_node = nodes[path.data.points[0]]
+            for i in range(1, len(path.data.points)):
+                new_node = nodes[path.data.points[i]]
+                plt.plot([last_node.x, new_node.x], [last_node.y, new_node.y], linewidth=5, c='k')
+                last_node = new_node
+        except KeyError as e:
+            print(f"Unable to show map. {e}")
+
+    plt.scatter(xs, ys, c=c)
+    plt.grid(True)
+    plt.show()
