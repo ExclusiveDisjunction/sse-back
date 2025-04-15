@@ -200,6 +200,9 @@ class TraverseRequest:
 
         source = int(source)
         is_group = is_group == "true"
-        dest = int(dest) if not is_group else str(dest)
+        try:
+            dest = int(dest) if not is_group else str(dest)
+        except ValueError:
+            return None 
 
         return TraverseRequest(token, source, dest, is_group)
