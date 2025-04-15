@@ -252,7 +252,7 @@ def fetch_nodes_to_traverse():
         return jsonify({}), 404
 
     result_nodes = result.data.points
-    return jsonify(result_nodes), 200
+    return jsonify({"ids": result_nodes}), 200
 
 if __name__ == "__main__":
     print("Starting server...\n")
