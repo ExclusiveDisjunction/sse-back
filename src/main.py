@@ -48,7 +48,7 @@ if __name__ == "__main__":
     c = []
     for node in db_nodes.values():
         xs.append(node.x)
-        ys.append(node.y)
+        ys.append(-node.y)
         c.append('b' if node.attr.is_path else 'r')
 
     if path is not None:
@@ -57,7 +57,7 @@ if __name__ == "__main__":
             last_node = nodes[path.data.points[0]]
             for i in range(1, len(path.data.points)):
                 new_node = nodes[path.data.points[i]]
-                plt.plot([last_node.x, new_node.x], [last_node.y, new_node.y], linewidth=5, c='k')
+                plt.plot([last_node.x, new_node.x], [-last_node.y, -new_node.y], linewidth=5, c='k')
                 last_node = new_node
         except KeyError as e:
             print(f"Unable to show map. {e}")
