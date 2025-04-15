@@ -106,8 +106,6 @@ class Graph:
 
     def shortest_node_path(self, source: int, dest: int) -> Optional[TableEntry]:
         """Determines the shortest path between the `source` and `dest`, if one exists."""
-        print(self.col_map)
-        print(type(dest))
         try:
             # Convert from the destination to the column index.
             t_dest = self.col_map[dest]
