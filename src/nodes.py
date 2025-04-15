@@ -110,17 +110,12 @@ class NodeTags:
     """
     def __init__(self, n_id: int, tags: list[str]):
         self.__n_id = n_id
-        self.__inner = tags
+        self.values = tags
 
     @property
     def n_id(self) -> int:
         """The bound node that this tag is for"""
         return self.__n_id
-
-    @property
-    def values(self) -> list[str]:
-        """The associated tags for this node"""
-        return self.__inner
 
 class NetworkNode:
     """
@@ -204,7 +199,6 @@ def zip_nodes_and_tags(
                 f"The node id referenced by (tag '{tag}', id: '{n_id}') was not found in the nodes."
             )
 
-        print(result[n_id].tags.values)
         result[n_id].tags.values = tag
 
     return result
