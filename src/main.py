@@ -65,3 +65,5 @@ if __name__ == "__main__":
     plt.scatter(xs, ys, c=c)
     plt.grid(True)
     plt.show()
+
+    input("Press enter")
