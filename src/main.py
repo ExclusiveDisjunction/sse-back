@@ -274,7 +274,7 @@ if __name__ == "__main__":
     graph = Graph(db_nodes, "dijkstra.json")
     nodes = zip_nodes_and_tags(db_nodes, db_tags)
 
-    app.run(debug = True)
+    app.run(debug = True, ssl_context = ('server.crt', 'server.key'))
 
     # now that the app has finished, we can insert all new users.
     for new_user in new_users:
