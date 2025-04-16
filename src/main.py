@@ -121,7 +121,7 @@ def login_request():
     password = decoded.password.encode()
     hashed_password = bcrypt.hashpw(password, salt)
 
-    if not bcrypt.checkpw(found.password, hashed_password):
+    if found.password != hashed_password:
         return jsonify(
             SignInResponse(
                 False,
