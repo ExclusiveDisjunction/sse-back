@@ -238,8 +238,9 @@ def fetch_nodes_to_traverse():
     """
 
     raw_message = request.get_json()
+    print(raw_message)
     message = TraverseRequest.from_dict(raw_message)
-
+    print(message)
     if message is None:
         return jsonify({}), 400
 

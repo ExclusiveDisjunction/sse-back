@@ -118,6 +118,9 @@ class TraverseRequest:
         self.__dest = dest
         self.__is_group = is_group
 
+    def __repr__(self) -> str:
+        return f"{self.source} to {self.dest} (is_group? {self.is_group})"
+
     @property
     def token(self) -> str:
         """The JWT associated with the request"""
@@ -150,14 +153,15 @@ class TraverseRequest:
             dest = data["end"] # str, number if is_group == "false", group name otherwise
             is_group = data["is_group"] # str "true" or "false"
         except KeyError:
+            print("Key error")
             return None
 
         source = int(source)
-        is_group = is_group == "true"
         try:
             if not is_group:
                 dest = int(dest)
-        except ValueError:
+        except ValueError as e:
+            print(f"Value convert error '{e}'")
             return None
 
         return TraverseRequest(token, source, dest, is_group)
