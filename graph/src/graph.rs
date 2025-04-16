@@ -47,10 +47,8 @@ impl ShortestPath {
     }
 }
 
-/// A shorthand of the result of Dijkstra's Algorithm, relating to the destination node id.
-type TableEntry = (usize, ShortestPath);
 /// A shorthand of the result that computing all shortests paths yields.
-type DijkstrasTable = Vec<Vec<Option<TableEntry>>>;
+type DijkstrasTable = Vec<Vec<Option<ShortestPath>>>;
 /// The data type of an adjacency matrix.
 type AdjMatrix = Vec<Vec<Option<f32>>>;
 
@@ -99,13 +97,11 @@ fn create_adj_table(from: Vec<Edge>, nodes: &HashMap<usize, &Node>) -> AdjMatrix
 /// Provides the graph data structure functionality. 
 pub struct Graph<'a> {
     nodes: HashMap<usize, &'a Node>,
-    dest: Vec<&'a Node>,
     adj: AdjMatrix
 }
 impl<'a> Graph<'a> {
     /// Creates the graph's information from a list of nodes and edges. 
     pub fn build(nodes: &'a [Node], edges: Vec<Edge>) -> Self {
-        let destination_nodes: Vec<&Node> = nodes.iter().filter(|x| x.is_path == 0).collect();
         let mut map_nodes: HashMap<usize, &'a Node> = HashMap::new();
         for node in nodes {
             map_nodes.insert(node.n_id, node);
@@ -115,7 +111,6 @@ impl<'a> Graph<'a> {
 
         Self {
             nodes: map_nodes,
-            dest: destination_nodes,
             adj
         }
     }
@@ -186,7 +181,7 @@ impl<'a> Graph<'a> {
     /// Computes the distances between all nodes and all destination nodes.
     pub fn compute_distances(&self) -> DijkstrasTable {
         let rows = self.nodes.len();
-        let cols = self.dest.len();
+        let cols = rows;
 
         println!("Constructing result table: {} nodes by {} destinations ({} total paths)", rows, cols, rows * cols);
 
@@ -195,13 +190,10 @@ impl<'a> Graph<'a> {
             let i = *source.0;
             println!("\tMapping {i}'s destionations");
 
-            for (j, destination) in self.dest.iter().enumerate() {
-                if let Some(d_result) = self.dijkstras(i, destination.n_id) {
-                    result_matrix[i][j] = Some( (destination.n_id, d_result) )
-                }
-                else {
-                    result_matrix[i][j] = None
-                }
+            for dest in &self.nodes {
+                let j = *dest.0;
+                result_matrix[i][j] = self.dijkstras(i, j);
+                
             }
         }
 

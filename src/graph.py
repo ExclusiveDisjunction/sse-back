@@ -42,30 +42,6 @@ class ShortestPath:
     def __repr__(self):
         return f"{self.dist} for points {self.points}"
 
-class TableEntry:
-    """Represents a specific result of the Dijkstra's table."""
-    def __init__(self, n_id: int, data: ShortestPath):
-        self.__n_id = n_id
-        self.__data = data
-
-    @property
-    def n_id(self) -> int:
-        """Gets the destination node's ID"""
-        return self.__n_id
-
-    @property
-    def data(self) -> ShortestPath:
-        """Gets the result of the Dijkstra's table"""
-        return self.__data
-
-    @staticmethod
-    def from_list(val: list) -> "TableEntry":
-        """Attempts to convert the list into an instance of TableEntry."""
-        n_id = val[0]
-        result = ShortestPath.from_dict(val[1])
-
-        return TableEntry(n_id, result)
-
 class Graph:
     """
     A central graph data structure used for least path finding.
@@ -96,44 +72,22 @@ class Graph:
             for i, row in enumerate(data):
                 for j, col in enumerate(row):
                     if col is not None:
-                        self.table[i, j] = TableEntry.from_list(col)
+                        self.table[i, j] = ShortestPath.from_dict(col)
 
-            self.col_map: dict[int: int] = {}
-            if self.rows != 0:
-                for (i, col) in enumerate(self.table[0]):
-                    if col is not None:
-                        self.col_map[col.n_id] = i
-
-    def shortest_node_path(self, source: int, dest: int) -> Optional[TableEntry]:
+    def shortest_node_path(self, source: int, dest: int) -> Optional[ShortestPath]:
         """Determines the shortest path between the `source` and `dest`, if one exists."""
-        try:
-            # Convert from the destination to the column index.
-            t_dest = self.col_map[dest]
-        except KeyError:
-            print(f"Key {dest} not found")
-            return None
-
         # Out of bounds
-        if source >= self.rows or t_dest >= self.cols:
+        if source >= self.rows or dest >= self.cols:
             print("out of bounds")
             return None
 
-        return self.table[source, t_dest]
+        return self.table[source, dest]
 
-    def shortest_group_path(self, source: int, dest: str) -> Optional[TableEntry]:
+    def shortest_group_path(self, source: int, dest: str) -> Optional[ShortestPath]:
         """Determines the path between the `source`, and the closest node in the group `dest`."""
         try:
             # First, we need to get all nodes out of that group.
             group_ids = self.groups[dest]
-
-            # Then we convert these node ids to column indexes
-            t_node_ids = []
-            for node_id in group_ids:
-                mapped = self.col_map[node_id]
-                if mapped > self.cols:
-                    continue
-
-                t_node_ids.append(self.col_map[node_id])
         except KeyError:
             return None
 
@@ -142,8 +96,8 @@ class Graph:
             return None
 
         # Determines the closest node out of this table.
-        min_entry: Optional[TableEntry] = None
-        for dest_node in t_node_ids:
+        min_entry: Optional[ShortestPath] = None
+        for dest_node in group_ids:
             result = self.shortest_node_path(source, dest_node)
             if result is None:
                 continue
@@ -151,7 +105,7 @@ class Graph:
             if min_entry is None:
                 min_entry = result
             else:
-                if result.data.dist < min_entry.data.dist:
+                if result.dist < min_entry.dist:
                     min_entry = result
 
         return min_entry
@@ -201,11 +155,9 @@ class TraverseRequest:
         source = int(source)
         is_group = is_group == "true"
         try:
-            if is_group:
-                dest = dest
-            else:
+            if not is_group:
                 dest = int(dest)
         except ValueError:
-            return None 
+            return None
 
         return TraverseRequest(token, source, dest, is_group)
