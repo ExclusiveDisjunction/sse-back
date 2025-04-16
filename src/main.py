@@ -116,10 +116,6 @@ def login_request():
             ).to_dict()
         ), 401
 
-    # Only one session per user
-    if active_users.user_signed_in(found) is not None:
-        return jsonify(SignInResponse(False, "The user is already signed in.", None).to_dict()), 409
-
     # Compare the passwords, using the user's salt.
     salt = found.salt
     password = decoded.password.encode()
