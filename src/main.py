@@ -238,9 +238,7 @@ def fetch_nodes_to_traverse():
     """
 
     raw_message = request.get_json()
-    print(raw_message)
     message = TraverseRequest.from_dict(raw_message)
-    print(message)
     if message is None:
         return jsonify({}), 400
 
@@ -252,7 +250,7 @@ def fetch_nodes_to_traverse():
     if result is None:
         return jsonify({}), 404
 
-    result_nodes = result.data.points
+    result_nodes = result.points
     return jsonify({"ids": result_nodes}), 200
 
 if __name__ == "__main__":
