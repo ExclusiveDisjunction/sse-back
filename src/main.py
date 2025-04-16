@@ -38,7 +38,7 @@ SECRET_KEY = "jwt-encryption"
 
 app = Flask(__name__)
 CORS(app,
-     origins=["http://localhost:4200"],
+     origins=["http://localhost:4200",  "https://langtowl.com"],
      supports_credentials=True,
      methods=["GET", "POST", "OPTIONS"],
      allow_headers=["Content-Type",
