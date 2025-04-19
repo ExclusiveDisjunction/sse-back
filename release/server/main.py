@@ -36,7 +36,7 @@ SECRET_KEY = "jwt-encryption"
 
 app = Flask(__name__)
 CORS(app,
-     origins=["http://localhost:4200"],
+     origins=["http://localhost:4200",  "https://langtowl.com"],
      supports_credentials=True,
      methods=["GET", "POST", "OPTIONS"],
      allow_headers=["Content-Type",
@@ -230,6 +230,7 @@ def fetch_nodes_to_traverse():
     if message is None:
         return jsonify({}), 400
 
+    # It is important that the correct path finding approach is used.
     if not message.is_group:
         result = graph.shortest_node_path(message.source, message.dest)
     else:
@@ -244,6 +245,7 @@ def fetch_nodes_to_traverse():
 if __name__ == "__main__":
     print("Starting server...\n")
 
+    # Requests the database for object retrival
     db = open_db("data.sqlite")
     if db is None:
         print("Unable to open database. Exiting")
@@ -256,6 +258,7 @@ if __name__ == "__main__":
     db_users = User.get_all_users(cursor)
 
     # Map users
+    # 
     all_users = create_user_dict(db_users)
 
     if db_nodes is None or db_tags is None:
@@ -277,7 +280,7 @@ if __name__ == "__main__":
             Please ensure the data in the database is valid. Inner error '{e}'
             """)
 
-    app.run(debug = False)
+    app.run(debug = True, ssl_context = ('server.crt', 'server.key'))
 
     # now that the app has finished, we can insert all new users.
     print(f"Commiting {len(new_users)} to the database...")
