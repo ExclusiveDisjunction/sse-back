@@ -8,8 +8,6 @@ import random
 import string
 from typing import Optional
 
-# import sqlite3
-
 from flask_cors import CORS
 from flask import Flask, jsonify, request
 import jwt
@@ -19,7 +17,7 @@ from usr import create_user_dict, SignInRequest
 from usr import SignInResponse, UserSessions, User, CreateUserRequest
 from nodes import NetworkNode, get_db_nodes, get_db_node_tags
 from nodes import zip_nodes_and_tags
-from graph import Graph, TraverseRequest
+from graph import Graph, TraverseRequest, GraphError
 from db import open_db
 
 # Who is signed in
@@ -33,7 +31,7 @@ all_users: dict[str: User] = {}
 # All new users created this session, that will be added to the database.
 new_users: list[User] = []
 
-# ssshhhhh
+# For true production, this will need to be kept in a more secure manner.
 SECRET_KEY = "jwt-encryption"
 
 app = Flask(__name__)
@@ -73,10 +71,6 @@ def is_token_valid(token: str) -> bool:
     """
     try:
         _ = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        # target_user = active_users.get_auth(token)
-        # if target_user is None:
-        #     print("The user is not signed in.")
-        #     return False
 
         return True
     except jwt.ExpiredSignatureError:
@@ -84,9 +78,6 @@ def is_token_valid(token: str) -> bool:
         return False
     except jwt.InvalidTokenError as e:
         print(f"The token is invalid '{e}'")
-        return False
-    except KeyError:
-        print("The user could not be found.")
         return False
 
 @app.route("/login", methods = ["POST"])
@@ -275,13 +266,26 @@ if __name__ == "__main__":
         sys.exit(2)
 
     # load graph data
-    graph = Graph(db_nodes, "dijkstra.json")
-    nodes = zip_nodes_and_tags(db_nodes, db_tags)
+    try:
+        graph = Graph(db_nodes, "dijkstra.json")
+    except GraphError as e:
+        print(f"The graph was not able to load, error '{e}'. Please ensure the data path is valid.")
+
+    try:
+        nodes = zip_nodes_and_tags(db_nodes, db_tags)
+    except ValueError as e:
+        print(
+            f"""
+            One or more data anomalies were found.
+            Please ensure the data in the database is valid. Inner error '{e}'
+            """)
 
     app.run(debug = True, ssl_context = ('server.crt', 'server.key'))
 
     # now that the app has finished, we can insert all new users.
+    print(f"Commiting {len(new_users)} to the database...")
     for new_user in new_users:
         new_user.insert_db(cursor)
 
     db.commit()
+    print("All tasks completed.")

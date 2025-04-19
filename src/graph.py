@@ -42,6 +42,19 @@ class ShortestPath:
     def __repr__(self):
         return f"{self.dist} for points {self.points}"
 
+class GraphError(Exception):
+    """An error that can be made with loading the graph."""
+    def __init__(self, message, inner_error):
+        super().__init__(message)
+
+        self.inner = inner_error
+
+    def __repr__(self):
+        return f"The graph could not be loaded because of '{self.inner}'"
+
+    def __str__(self):
+        return self.__repr__()
+
 class Graph:
     """
     A central graph data structure used for least path finding.
@@ -62,23 +75,34 @@ class Graph:
 
     def __load_json(self, path: str):
         """Using the JSON cache created, convert the JSON into a shortest distances table."""
-        with open(path, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        try:
+            f = open(path, "r", encoding="utf-8")
+        except FileNotFoundError as e:
+            print(f"The file at path '{path}' could not be found. '{e}'")
+            raise GraphError("file not found", e) from e
+        except PermissionError as e:
+            print(f"The program lacks the proper permissions to open this file. '{e}'")
+            raise GraphError("permission error", e) from e
+        except OSError as e:
+            print(f"Unable to open the file at path '{path}', with error '{e}'")
+            raise GraphError("OS error", e) from e
 
-            self.rows = len(data)
-            self.cols = len(data[0]) if self.rows != 0 else 0
+        data = json.load(f)
 
-            self.table = np.full((self.rows, self.cols), None, dtype=object)
-            for i, row in enumerate(data):
-                for j, col in enumerate(row):
-                    if col is not None:
-                        self.table[i, j] = ShortestPath.from_dict(col)
+        self.rows = len(data)
+        self.cols = len(data[0]) if self.rows != 0 else 0
+
+        self.table = np.full((self.rows, self.cols), None, dtype=object)
+        for i, row in enumerate(data):
+            for j, col in enumerate(row):
+                if col is not None:
+                    self.table[i, j] = ShortestPath.from_dict(col)
 
     def shortest_node_path(self, source: int, dest: int) -> Optional[ShortestPath]:
         """Determines the shortest path between the `source` and `dest`, if one exists."""
         # Out of bounds
         if source >= self.rows or dest >= self.cols:
-            print("out of bounds")
+            print(f"The index {source} greater than rows, or {dest} is greater than columns.")
             return None
 
         return self.table[source, dest]
@@ -89,10 +113,12 @@ class Graph:
             # First, we need to get all nodes out of that group.
             group_ids = self.groups[dest]
         except KeyError:
+            print(f"The destination group {dest} could not be resolved.")
             return None
 
         # out of bounds
         if source >= self.rows:
+            print(f"The source index {source} is invalid.")
             return None
 
         # Determines the closest node out of this table.
