@@ -87,6 +87,7 @@ def is_token_valid(token: str) -> bool:
         return False
     except KeyError:
         print("The user could not be found.")
+        return False
 
 @app.route("/login", methods = ["POST"])
 def login_request():
@@ -238,6 +239,7 @@ def fetch_nodes_to_traverse():
     if message is None:
         return jsonify({}), 400
 
+    # It is important that the correct path finding approach is used.
     if not message.is_group:
         result = graph.shortest_node_path(message.source, message.dest)
     else:
@@ -252,6 +254,7 @@ def fetch_nodes_to_traverse():
 if __name__ == "__main__":
     print("Starting server...\n")
 
+    # Requests the database for object retrival
     db = open_db("data.sqlite")
     if db is None:
         print("Unable to open database. Exiting")
@@ -264,6 +267,7 @@ if __name__ == "__main__":
     db_users = User.get_all_users(cursor)
 
     # Map users
+    # 
     all_users = create_user_dict(db_users)
 
     if db_nodes is None or db_tags is None:
